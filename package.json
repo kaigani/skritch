@@ -1,0 +1,24 @@
+{
+  "name": "skritch-monorepo",
+  "private": true,
+  "packageManager": "pnpm@10.12.1",
+  "scripts": {
+    "dev": "pnpm --filter @skritch/desktop dev",
+    "build": "pnpm --filter @skritch/desktop build",
+    "build:mac": "CI=true pnpm tauri build --target universal-apple-darwin --ci",
+    "test": "pnpm --filter @skritch/desktop test",
+    "test:e2e": "pnpm --filter @skritch/desktop test:e2e",
+    "typecheck": "pnpm --filter @skritch/desktop typecheck",
+    "tauri": "pnpm --filter @skritch/desktop tauri",
+    "lint": "eslint apps/desktop/src",
+    "format": "prettier --write \"apps/desktop/{src,tests}/**/*.{ts,tsx,mjs,css}\""
+  },
+  "type": "module",
+  "devDependencies": {
+    "eslint": "^9.39.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "prettier": "^3.9.9",
+    "typescript": "~5.6.3",
+    "typescript-eslint": "^8.70.1"
+  }
+}

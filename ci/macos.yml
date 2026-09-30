@@ -1,0 +1,98 @@
+name: macOS build
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: macos-14 # Apple silicon; the x86_64 half of the universal build is cross-compiled
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - uses: dtolnay/rust-toolchain@stable
+        with: { targets: 'aarch64-apple-darwin,x86_64-apple-darwin' }
+      - uses: Swatinem/rust-cache@v2
+        with: { workspaces: apps/desktop/src-tauri }
+
+      # LGPL FFmpeg sidecars (plan §2), cached by the build script's contents.
+      - id: ffmpeg-cache
+        uses: actions/cache@v4
+        with:
+          path: apps/desktop/src-tauri/binaries
+          key: ffmpeg-macos-${{ hashFiles('scripts/build-ffmpeg-macos.sh') }}
+      - if: steps.ffmpeg-cache.outputs.cache-hit != 'true'
+        run: |
+          brew install nasm pkg-config
+          scripts/build-ffmpeg-macos.sh
+      - name: Put the sidecars on PATH for the Rust tests
+        run: |
+          mkdir -p "$RUNNER_TEMP/ffbin"
+          ln -sf "$PWD/apps/desktop/src-tauri/binaries/ffmpeg-aarch64-apple-darwin" "$RUNNER_TEMP/ffbin/ffmpeg"
+          ln -sf "$PWD/apps/desktop/src-tauri/binaries/ffprobe-aarch64-apple-darwin" "$RUNNER_TEMP/ffbin/ffprobe"
+          echo "$RUNNER_TEMP/ffbin" >> "$GITHUB_PATH"
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      # Playwright's WebKit on macOS uses AVFoundation like WKWebView: this is the frame-accuracy and
+      # UI check for the Mac webview (the pixel test must pass here, unlike on Windows WebKit).
+      - run: pnpm exec playwright install webkit
+        working-directory: apps/desktop
+      - run: pnpm test:e2e --project=webkit
+      - run: cargo test
+        working-directory: apps/desktop/src-tauri
+      - run: cargo clippy --all-targets -- -D warnings
+        working-directory: apps/desktop/src-tauri
+
+      - name: Build universal .app + .dmg (ad-hoc signed)
+        # CI smoke-test artifacts have no private signing certificate. Local Mac builds use the
+        # configured Developer ID so Screen Recording grants survive updates.
+        env:
+          APPLE_SIGNING_IDENTITY: '-'
+        run: pnpm tauri build --target universal-apple-darwin
+      - name: Inspect the bundle
+        run: |
+          APP=apps/desktop/src-tauri/target/universal-apple-darwin/release/bundle/macos/Skritch.app
+          lipo -info "$APP/Contents/MacOS/skritch" "$APP/Contents/MacOS/ffmpeg" "$APP/Contents/MacOS/ffprobe"
+          codesign --verify --deep --strict --verbose=2 "$APP"
+          plutil -p "$APP/Contents/Info.plist" | grep -E "CFBundle(Identifier|ShortVersionString|DocumentTypes)|LSMinimumSystemVersion|LSApplicationCategoryType"
+          du -sh "$APP" apps/desktop/src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg
+
+      # Smoke test: launch the real app on the runner's desktop session and screenshot it.
+      - name: Launch and screenshot
+        continue-on-error: true
+        run: |
+          mkdir -p review
+          APP=apps/desktop/src-tauri/target/universal-apple-darwin/release/bundle/macos/Skritch.app
+          open "$APP"
+          sleep 12
+          pgrep -x skritch && echo "Skritch is running"
+          screencapture -x review/mac-01-launch.png
+          # Fullscreen Snap hotkey (⌃⇧7). Needs Accessibility for System Events; without Screen
+          # Recording permission the app shows its permission explainer instead — both are useful.
+          osascript -e 'tell application "System Events" to key code 26 using {control down, shift down}' || true
+          sleep 5
+          screencapture -x review/mac-02-after-snap.png
+          # Open a video through Finder's "Open With" path (Apple Event → RunEvent::Opened).
+          ffmpeg -v error -f lavfi -i testsrc2=size=1280x720:rate=30 -t 3 -c:v h264_videotoolbox -b:v 4M review/clip.mp4 \
+            || ffmpeg -v error -f lavfi -i testsrc2=size=1280x720:rate=30 -t 3 -c:v mpeg4 review/clip.mp4
+          open -a "$APP" review/clip.mp4
+          sleep 8
+          screencapture -x review/mac-03-video.png
+          pkill -x skritch || true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Skritch-macOS-universal
+          path: apps/desktop/src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: macos-review-screenshots
+          path: review/*.png
+          if-no-files-found: ignore

@@ -1,0 +1,19 @@
+node_modules/
+dist/
+target/
+apps/desktop/src-tauri/binaries/*
+!apps/desktop/src-tauri/binaries/.gitkeep
+apps/desktop/src-tauri/gen/
+test-results/
+playwright-report/
+*.log
+.DS_Store
+.env
+.env.*
+!.env.example
+*.p12
+*.pfx
+*.key
+*.mobileprovision
+# Local QA screenshots can contain desktop/user content. Public previews live in site/assets/.
+/docs/review/

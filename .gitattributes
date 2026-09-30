@@ -1,0 +1,8 @@
+* text=auto eol=lf
+*.png binary
+*.icns binary
+*.ico binary
+*.mp4 binary
+*.webm binary
+# Preserve upstream legal text; do not flag whitespace in bundled license copies.
+apps/desktop/src-tauri/resources/licenses/** -whitespace

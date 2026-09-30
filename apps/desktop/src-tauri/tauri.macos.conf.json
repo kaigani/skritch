@@ -1,0 +1,57 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Skritch",
+        "width": 1100,
+        "height": 760,
+        "minWidth": 640,
+        "minHeight": 480,
+        "center": true,
+        "dragDropEnabled": true,
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true,
+        "trafficLightPosition": { "x": 16, "y": 22 }
+      }
+    ]
+  },
+  "bundle": {
+    "targets": ["app", "dmg"],
+    "category": "GraphicsDesign",
+    "shortDescription": "Screenshot, markup and video trim",
+    "externalBin": ["binaries/ffmpeg", "binaries/ffprobe"],
+    "resources": ["resources/licenses/"],
+    "fileAssociations": [
+      {
+        "ext": ["png", "jpg", "jpeg", "gif", "bmp", "tif", "tiff", "webp"],
+        "name": "Image",
+        "role": "Editor",
+        "rank": "Alternate"
+      },
+      {
+        "ext": ["mp4", "mov", "m4v", "webm", "mkv", "avi"],
+        "name": "Video",
+        "role": "Editor",
+        "rank": "Alternate"
+      },
+      {
+        "ext": ["skritch", "skritchv"],
+        "name": "Skritch Project",
+        "role": "Editor",
+        "rank": "Owner"
+      }
+    ],
+    "macOS": {
+      "minimumSystemVersion": "13.3",
+      "signingIdentity": "Developer ID Application: Kaigani Turner (3RYX74KM8T)",
+      "hardenedRuntime": true,
+      "dmg": {
+        "windowSize": { "width": 560, "height": 340 },
+        "appPosition": { "x": 150, "y": 170 },
+        "applicationFolderPosition": { "x": 410, "y": 170 }
+      }
+    }
+  }
+}
