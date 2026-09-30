@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#131217" />
+    <title>Skritch — Scratch that itch.</title>
+    <meta
+      name="description"
+      content="The screenshot, markup and quick video app for the things you wished Skitch could do. Multiple images, smarter crops, and drag-to-save exports. Free for Mac."
+    />
+    <link rel="canonical" href="https://kaigani.github.io/skritch/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Skritch — Scratch that itch." />
+    <meta
+      property="og:description"
+      content="Snap. Mark up. Layer. Crop. Drag it out. A little desktop app with a few extra claws."
+    />
+    <meta property="og:url" content="https://kaigani.github.io/skritch/" />
+    <meta property="og:image" content="https://kaigani.github.io/skritch/assets/social.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" href="assets/icon.png" type="image/png" />
+    <link rel="apple-touch-icon" href="assets/icon.png" />
+    <link rel="stylesheet" href="style.css" />
+    <script src="script.js" defer></script>
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <svg class="svg-defs" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <defs>
+        <symbol id="arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" /></symbol>
+        <symbol id="download-icon" viewBox="0 0 24 24">
+          <path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5" />
+        </symbol>
+        <symbol id="layers-icon" viewBox="0 0 24 24">
+          <path d="m12 3 10 6-10 6L2 9l10-6Zm-9 11 9 5 9-5M3 18l9 5 9-5" />
+        </symbol>
+        <symbol id="crop-icon" viewBox="0 0 24 24"><path d="M6 2v16h16M2 6h16v16M9 15l12-12" /></symbol>
+        <symbol id="spark-icon" viewBox="0 0 24 24">
+          <path d="m12 2 3 7 7 3-7 3-3 7-3-7-7-3 7-3 3-7Z" />
+        </symbol>
+        <symbol id="play-icon" viewBox="0 0 24 24"><path d="m8 4 12 8-12 8V4Z" /></symbol>
+        <symbol id="lock-icon" viewBox="0 0 24 24">
+          <rect x="4" y="10" width="16" height="12" rx="3" />
+          <path d="M8 10V6a4 4 0 0 1 8 0v4m-4 5v3" />
+        </symbol>
+      </defs>
+    </svg>
+    <header class="nav wrap">
+      <a class="brand" href="./" aria-label="Skritch home"
+        ><img src="assets/icon.png" width="38" height="38" alt="" /><span
+          >skritch<span class="brand-dot">.</span></span
+        ></a
+      >
+      <nav aria-label="Main navigation">
+        <a href="#features">The good stuff</a><a href="https://github.com/kaigani/skritch">GitHub ↗</a
+        ><a class="nav-download" href="#download"
+          >Get Skritch <svg><use href="#arrow" /></svg
+        ></a>
+      </nav>
+    </header>
+    <main id="main">
+      <section class="hero wrap">
+        <div class="hero-copy">
+          <span class="eyebrow"><span class="status-dot"></span> SMALL APP. SHARP CLAWS.</span>
+          <h1>Scratch<br /><span>that itch.</span></h1>
+          <p class="hero-lede">Your screenshots have<br />more to say.</p>
+          <p class="hero-description">
+            Skritch scratches an itch. For the missing features you wished Skitch had: more images, smarter
+            crops, quick video edits, and that beautiful little <em>Drag Me</em> tab.
+          </p>
+          <a
+            class="button primary"
+            href="https://github.com/kaigani/skritch/releases/download/v0.1.0/Skritch_0.1.0_universal.dmg"
+            ><svg><use href="#download-icon" /></svg> Download for Mac <span>↗</span></a
+          >
+          <div class="download-meta">Free & open source <span>·</span> Apple silicon + Intel</div>
+          <a class="quiet-link" href="#download">macOS 13.3+ · v0.1.0 · Installation notes ↓</a>
+        </div>
+        <div class="hero-stage">
+          <div class="pink-orbit" aria-hidden="true"></div>
+          <div class="scratch-marks" aria-hidden="true"><i></i><i></i><i></i></div>
+          <div class="preview-shell">
+            <div class="preview-chrome">
+              <span class="traffic" aria-hidden="true"><i></i><i></i><i></i></span
+              ><span>A little feedback. A lot clearer.</span><span class="window-logo">S.</span>
+            </div>
+            <img
+              id="app-preview"
+              src="assets/preview-layers.png"
+              width="1100"
+              height="760"
+              alt="Skritch editor showing two image layers, a pink arrow and an editable annotation on a sample web design"
+              fetchpriority="high"
+            />
+            <div class="preview-caption">
+              <span class="live-dot"></span
+              ><span id="preview-caption">Two images. One canvas. Your call.</span
+              ><span>ACTUAL APP PREVIEW</span>
+            </div>
+          </div>
+          <div class="preview-controls" role="group" aria-label="Explore app previews">
+            <button data-preview="markup" aria-pressed="false">01 <span>Mark it up</span></button>
+            <button data-preview="layers" aria-pressed="true">02 <span>Layer it on</span></button>
+            <button data-preview="crop" aria-pressed="false">03 <span>Get the crop</span></button>
+          </div>
+          <div class="floating-tag" aria-hidden="true">
+            <svg><use href="#spark-icon" /></svg> Familiar feel. Fresh possibilities.
+          </div>
+        </div>
+      </section>
+      <div class="manifesto">
+        <div class="wrap">
+          <span>SNAP IT.</span><span>MARK IT.</span><span>MAKE YOUR POINT.</span
+          ><svg aria-hidden="true"><use href="#spark-icon" /></svg><span class="pink-text">DRAG IT OUT.</span>
+        </div>
+      </div>
+      <section class="features wrap section" id="features">
+        <div class="section-heading">
+          <div>
+            <span class="eyebrow">THE GOOD STUFF</span>
+            <h2>A few extra claws.</h2>
+          </div>
+          <p>The simple joy of a screenshot app.<br />With room to do a little more.</p>
+        </div>
+        <div class="feature-grid">
+          <article class="feature-card layer-card">
+            <div class="card-number">01 / MORE ROOM TO THINK</div>
+            <div class="layer-art" aria-hidden="true">
+              <div class="mini-image back"><span>REFERENCE</span><i></i></div>
+              <div class="mini-image front">
+                <span>YOUR NEXT IDEA</span><strong>Better<br />together.</strong>
+                <div class="selection-corner a"></div>
+                <div class="selection-corner b"></div>
+                <div class="selection-corner c"></div>
+                <div class="selection-corner d"></div>
+              </div>
+              <div class="layer-badge">
+                <svg><use href="#layers-icon" /></svg> 2 images · 1 canvas
+              </div>
+            </div>
+            <h3>One canvas.<br />As many ideas as you need.</h3>
+            <p>
+              Drop in another image. Move it, resize it, bring it forward or send it back. Build the whole
+              picture without leaving your markup app.
+            </p>
+          </article>
+          <article class="feature-card export-card">
+            <div class="card-number">02 / YOUR FILE. YOUR WAY.</div>
+            <div class="export-art">
+              <div class="sample-file" aria-live="polite">
+                <span id="file-format">PNG</span><span id="sample-name">design-review.png</span>
+              </div>
+              <div class="export-demo" aria-hidden="true">
+                <span id="demo-format">PNG ▾</span><strong>⠿ &nbsp; Drag Me</strong>
+              </div>
+              <div class="format-choices" role="group" aria-label="Preview an export format">
+                <button aria-pressed="true" data-format="png">PNG</button
+                ><button aria-pressed="false" data-format="jpg">JPG</button
+                ><button aria-pressed="false" data-format="pdf">PDF</button
+                ><button aria-pressed="false" data-format="tiff">TIFF</button>
+              </div>
+            </div>
+            <h3>That satisfying<br />drag-and-done feeling.</h3>
+            <p>
+              Pick a format. Grab Drag Me. Drop a real file into Finder, the Desktop, or another app. PNG,
+              JPG, TIFF, PDF, BMP and GIF are all on the menu.
+            </p>
+          </article>
+          <article class="feature-card compact-card">
+            <div class="feature-icon">
+              <svg><use href="#crop-icon" /></svg>
+            </div>
+            <h3>Crop with intention.</h3>
+            <p>
+              Crop one image, or click outside to crop the canvas. Canvas crops trim the image layers too. No
+              stray edges. Undo has your back.
+            </p>
+          </article>
+          <article class="feature-card compact-card">
+            <div class="feature-icon">
+              <svg><use href="#play-icon" /></svg>
+            </div>
+            <h3>A little video magic.</h3>
+            <p>
+              Trim and reorder clips, step through frames, and pull a still into the annotation editor. Quick
+              edits without a full production suite.
+            </p>
+          </article>
+          <article class="feature-card compact-card">
+            <div class="feature-icon">
+              <svg><use href="#spark-icon" /></svg>
+            </div>
+            <h3>Make your point.</h3>
+            <p>
+              Arrows, text, shapes, highlights, stamps and pixelation. Familiar tools, a compact rail, and
+              just the right amount of hot pink.
+            </p>
+          </article>
+          <article class="feature-card compact-card">
+            <div class="feature-icon">
+              <svg><use href="#lock-icon" /></svg>
+            </div>
+            <h3>It stays on your Mac.</h3>
+            <p>
+              No account. No cloud upload. Work locally, save editable projects, and share files when you’re
+              ready. Your workflow is yours.
+            </p>
+          </article>
+        </div>
+      </section>
+      <section class="workflow wrap section" id="workflow">
+        <div class="workflow-intro">
+          <span class="eyebrow">LESS FRICTION. MORE FLOW.</span>
+          <h2>From “look at this”<br />to “got it.”</h2>
+          <p>Capture a detail. Add a little context.<br />Keep moving.</p>
+          <div class="shortcut">
+            <kbd>⌃</kbd><kbd>⇧</kbd><kbd>5</kbd><span>Your next screenshot starts here.</span>
+          </div>
+        </div>
+        <ol class="steps">
+          <li>
+            <span>01</span>
+            <div>
+              <h3>Snap what matters.</h3>
+              <p>
+                Capture a region, a window or a full display. Reuse your last area, or give yourself a
+                countdown.
+              </p>
+            </div>
+          </li>
+          <li>
+            <span>02</span>
+            <div>
+              <h3>Add your point of view.</h3>
+              <p>
+                Mark it up, add a reference image, crop the noise. Your capture gets a timestamp and window
+                title, ready to rename.
+              </p>
+            </div>
+          </li>
+          <li>
+            <span>03</span>
+            <div>
+              <h3>Let it go.</h3>
+              <p>
+                Choose your format and drag the file straight to its next home. Save a project if the
+                conversation isn’t finished.
+              </p>
+            </div>
+          </li>
+        </ol>
+      </section>
+      <section class="download-section wrap" id="download">
+        <div class="download-glow" aria-hidden="true"></div>
+        <img
+          class="download-logo"
+          src="assets/icon.png"
+          width="100"
+          height="100"
+          alt="Skritch’s white scratching hand on a hot-pink background"
+        />
+        <span class="eyebrow">YOUR NEW LITTLE DESKTOP HABIT</span>
+        <h2>Got an itch?</h2>
+        <p>Make room for Skritch.</p>
+        <a
+          class="button primary"
+          href="https://github.com/kaigani/skritch/releases/download/v0.1.0/Skritch_0.1.0_universal.dmg"
+          ><svg><use href="#download-icon" /></svg> Download for Mac <span>↗</span></a
+        >
+        <div class="download-meta">v0.1.0 · Universal DMG · About 53 MB</div>
+        <p class="system-note">
+          macOS 13.3 or later · Apple silicon & Intel<br />Free. MIT licensed. No account needed.
+        </p>
+        <div class="install-note">
+          <strong>A quick first-launch note</strong>
+          <p>
+            This release is Developer ID signed, but not yet notarized. macOS may ask you to approve it in
+            Privacy & Security. Drag Skritch into Applications, launch it, and allow Screen Recording when
+            prompted.
+            <a href="https://github.com/kaigani/skritch#install-on-macos">Full installation guide ↗</a>
+          </p>
+        </div>
+        <div class="download-links">
+          <a href="https://github.com/kaigani/skritch/releases/tag/v0.1.0">Release notes</a
+          ><a href="https://github.com/kaigani/skritch/releases/download/v0.1.0/SHA256SUMS.txt"
+            >Verify download</a
+          ><a href="https://github.com/kaigani/skritch">Explore the source ↗</a>
+        </div>
+      </section>
+      <section class="faq wrap section">
+        <div>
+          <span class="eyebrow">A FEW SMALL DETAILS</span>
+          <h2>Good to know.</h2>
+        </div>
+        <div class="faq-list">
+          <details>
+            <summary>Is this connected to Skitch?<span>+</span></summary>
+            <p>
+              No. Skritch is an independent project inspired by the ease of Skitch. It adds its own approach
+              to image layers, canvas cropping and quick video work. It is not affiliated with Skitch or
+              Evernote.
+            </p>
+          </details>
+          <details>
+            <summary>Can I keep editing after I save?<span>+</span></summary>
+            <p>
+              Save a .skritch project to retain the editable document. Skritch’s PNG export can also retain
+              editable document data when it fits within the metadata limit. Other image formats export a
+              flattened image.
+            </p>
+          </details>
+          <details>
+            <summary>What about Windows?<span>+</span></summary>
+            <p>
+              The codebase supports Windows and macOS. This first public download is the universal Mac app. A
+              packaged Windows release is not available yet; build instructions are in the GitHub README.
+            </p>
+          </details>
+          <details>
+            <summary>Screen Recording is already enabled. Why am I asked again?<span>+</span></summary>
+            <p>
+              Older development builds used a different signing identity. Quit Skritch, install this build in
+              Applications, then remove the old Screen Recording entry and add the installed app again. Future
+              builds use the same Developer ID. See the README for the full migration steps.
+            </p>
+          </details>
+          <details>
+            <summary>Found a bug or have an idea?<span>+</span></summary>
+            <p>
+              This is an early public release.
+              <a href="https://github.com/kaigani/skritch/issues">Open an issue on GitHub</a> with your macOS
+              version and a few steps to reproduce it. Please remove private information from any screenshots
+              you share.
+            </p>
+          </details>
+        </div>
+      </section>
+    </main>
+    <footer class="footer wrap">
+      <div class="footer-top">
+        <a class="brand" href="./"
+          ><img src="assets/icon.png" width="32" height="32" alt="" /><span>skritch.</span></a
+        >
+        <p>Skritch scratches an itch.</p>
+        <a href="https://github.com/kaigani/skritch">Made by Kaigani ↗</a>
+      </div>
+      <div class="footer-bottom">
+        <span
+          >© 2026 Kaigani Turner ·
+          <a href="https://github.com/kaigani/skritch/blob/main/LICENSE">MIT license</a> · Independent of
+          Skitch & Evernote.</span
+        ><span
+          >This app uses <a href="https://ffmpeg.org/">FFmpeg</a> under LGPL-2.1-or-later.
+          <a
+            href="https://github.com/kaigani/skritch/releases/download/v0.1.0/Skritch_0.1.0_third-party-sources.tar.gz"
+            >Source & notices</a
+          >.</span
+        >
+      </div>
+    </footer>
+  </body>
+</html>

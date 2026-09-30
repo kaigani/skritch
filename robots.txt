@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://kaigani.github.io/skritch/sitemap.xml
