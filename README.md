@@ -14,7 +14,7 @@ projects and native drag-to-save exports. Built with Tauri 2, React, TypeScript 
 **[Download Skritch 0.1.0 for macOS](https://github.com/kaigani/skritch/releases/download/v0.1.0/Skritch_0.1.0_universal.dmg)**
 
 - macOS **13.3 or later**. One universal DMG for **Apple silicon and Intel**.
-- About 53 MB to download. FFmpeg and FFprobe are included; no separate installation is needed.
+- About 55 MB to download. FFmpeg and FFprobe are included; no separate installation is needed.
 - Developer ID signed. **Not yet notarized**; see the first-launch instructions below.
 - Free and MIT licensed. No account or cloud service required.
 - The source supports Windows, but a packaged Windows release is not available yet.
@@ -212,7 +212,7 @@ The Rustup toolchain must precede Homebrew Rust for cross-compilation. Output is
 
 The default local signing identity is the project's Developer ID certificate. Other developers
 can set `APPLE_SIGNING_IDENTITY` to their own certificate. Setting it to `-` creates an ad-hoc development
-build, whose privacy grants may not survive a rebuild. CI smoke-test artifacts explicitly use this
+build, whose privacy grants may not survive a rebuild. The optional CI templates explicitly use this
 ad-hoc override; they are not the Developer ID release download. No signing keys are stored in this repository.
 
 `build:mac` uses CI-mode DMG packaging to avoid Finder automation. Notarization is not configured yet.
