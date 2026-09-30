@@ -9,6 +9,7 @@ export type CaptureAction = CaptureKind | 'blank' | 'clipboard' | 'open';
 export interface Prefs {
   captureAction: CaptureAction;
   captureArrival: CaptureArrival;
+  advancedCapture: boolean;
   newAreaFill: NewAreaFill;
   newAreaColor: string;
   defaultFormat: ImageFormat;
@@ -21,6 +22,7 @@ export interface Prefs {
 export const DEFAULT_PREFS: Prefs = {
   captureAction: 'crosshair',
   captureArrival: 'ask',
+  advancedCapture: false,
   newAreaFill: 'white',
   newAreaColor: '#ffffff',
   defaultFormat: 'png',

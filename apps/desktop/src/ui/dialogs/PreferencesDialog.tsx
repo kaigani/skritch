@@ -42,6 +42,17 @@ export function PreferencesDialog() {
             <option value="newWindow">Open a new document</option>
           </select>
 
+          <label htmlFor="pref-advanced-capture">Screen Snap</label>
+          <label style={{ textAlign: 'left' }}>
+            <input
+              id="pref-advanced-capture"
+              type="checkbox"
+              checked={p.advancedCapture}
+              onChange={(e) => p.update({ advancedCapture: e.target.checked })}
+            />{' '}
+            Advanced options after capture
+          </label>
+
           <label htmlFor="pref-fill">New canvas area</label>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <select

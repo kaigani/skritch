@@ -144,3 +144,15 @@ The automation host does not grant Accessibility or Screen Recording access for 
 - [x] Universal app and DMG signed by Developer ID Application: Kaigani Turner (3RYX74KM8T); both signatures and DMG integrity verified
 - [x] App designated requirement uses bundle ID and Apple developer team, with no build-specific cdhash
 - [ ] One-time permission migration from the old ad-hoc app, then capture after an update with the same Developer ID
+
+## Advanced capture options — 2026-09-29
+
+- [x] Optional Preferences toggle persists; disabled mode still captures immediately on release/click
+- [x] Region and window selections remain adjustable, with movement and all four corner handles
+- [x] Exact physical-pixel dimensions, linked aspect ratio, boundary clamping and Retina scaling
+- [x] Timer can be toggled on/off; full-display selection waits for explicit confirmation
+- [x] Enter confirms, Escape/Cancel cancels, arrows adjust by one pixel (Shift: ten)
+- [x] 47 unit tests; full existing browser suite plus 12 advanced-capture Chromium/WebKit checks
+- [x] TypeScript and ESLint; visual review at 1440×900 and 640×480 in `docs/review/advanced-capture-*.png`
+- [x] Small-screen panel stays onscreen and leaves all four corner handles reachable
+- [ ] Native capture, timed recapture and multi-display interaction after installing the rebuilt app

@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Optional advanced capture controls in Preferences: adjust a region/window after selection, move it,
+  resize using corner handles or exact pixel dimensions, and lock its aspect ratio.
+- Switch the pending selection to a five-second timer or the entire current display before confirming.
+- Keyboard movement/resizing and Retina-correct dimensions; immediate capture remains the default.
+
 ## 0.1.0 — 2026-09-29
 
 First public Mac release. Universal binary for Apple silicon and Intel; macOS 13.3 or later.

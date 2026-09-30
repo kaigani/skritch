@@ -94,6 +94,14 @@ Click the main **Screen Snap** button to run the current action. Its separate ar
 picker; selecting an item changes the action without immediately capturing. The selection persists
 between launches. Native **Capture** menu commands also provide previous-area and timed/menu captures.
 
+Enable **Preferences → Advanced options after capture** to fine-tune a region or window selection
+before taking it. Drag the area to move it, drag any corner to resize, or enter exact pixel dimensions.
+The link button locks the aspect ratio. The timer button toggles a five-second countdown; the
+full-screen button selects the entire current display. Click **Capture** (or press Enter outside a
+field/button) to confirm, or Escape to cancel. Arrow keys move a focused selection or corner one
+pixel; Shift + arrow moves ten. Dimensions use screenshot pixels, including on Retina displays.
+With the preference off, releasing a region selection or clicking a window captures immediately.
+
 Select a tool from the left rail, then draw on the canvas. Use **V** to select and adjust objects.
 Open or drop another image and choose **Add to Canvas** to keep it alongside the existing content.
 
