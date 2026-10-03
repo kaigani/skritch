@@ -7,7 +7,7 @@
     <title>Skritch — Scratch that itch.</title>
     <meta
       name="description"
-      content="The screenshot, markup and quick video app for the things you wished Skitch could do. Multiple images, smarter crops, and drag-to-save exports. Free for Mac."
+      content="The screenshot, markup and quick video app for the things you wished Skitch could do. Multiple images, smarter crops, and drag-to-save exports. Free for Mac and Windows."
     />
     <link rel="canonical" href="https://kaigani.github.io/skritch/" />
     <meta property="og:type" content="website" />
@@ -69,13 +69,11 @@
             Skritch scratches an itch. For the missing features you wished Skitch had: more images, smarter
             crops, quick video edits, and that beautiful little <em>Drag Me</em> tab.
           </p>
-          <a
-            class="button primary"
-            href="https://github.com/kaigani/skritch/releases/download/v0.1.0/Skritch_0.1.0_universal.dmg"
-            ><svg><use href="#download-icon" /></svg> Download for Mac <span>↗</span></a
+          <a class="button primary" href="#download"
+            ><svg><use href="#download-icon" /></svg> Download Skritch <span>↓</span></a
           >
-          <div class="download-meta">Free & open source <span>·</span> Apple silicon + Intel</div>
-          <a class="quiet-link" href="#download">macOS 13.3+ · v0.1.0 · Installation notes ↓</a>
+          <div class="download-meta">Free & open source <span>·</span> Mac + Windows</div>
+          <a class="quiet-link" href="#download">v0.1.0 · Pick your platform ↓</a>
         </div>
         <div class="hero-stage">
           <div class="pink-orbit" aria-hidden="true"></div>
@@ -163,7 +161,7 @@
             </div>
             <h3>That satisfying<br />drag-and-done feeling.</h3>
             <p>
-              Pick a format. Grab Drag Me. Drop a real file into Finder, the Desktop, or another app. PNG,
+              Pick a format. Grab Drag Me. Drop a real file into Finder, File Explorer, or another app. PNG,
               JPG, TIFF, PDF, BMP and GIF are all on the menu.
             </p>
           </article>
@@ -201,7 +199,7 @@
             <div class="feature-icon">
               <svg><use href="#lock-icon" /></svg>
             </div>
-            <h3>It stays on your Mac.</h3>
+            <h3>Your work stays local.</h3>
             <p>
               No account. No cloud upload. Work locally, save editable projects, and share files when you’re
               ready. Your workflow is yours.
@@ -215,7 +213,7 @@
           <h2>From “look at this”<br />to “got it.”</h2>
           <p>Capture a detail. Add a little context.<br />Keep moving.</p>
           <div class="shortcut">
-            <kbd>⌃</kbd><kbd>⇧</kbd><kbd>5</kbd><span>Your next screenshot starts here.</span>
+            <kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>5</kbd><span>Your next screenshot starts here.</span>
           </div>
         </div>
         <ol class="steps">
@@ -263,28 +261,77 @@
         <span class="eyebrow">YOUR NEW LITTLE DESKTOP HABIT</span>
         <h2>Got an itch?</h2>
         <p>Make room for Skritch.</p>
-        <a
-          class="button primary"
-          href="https://github.com/kaigani/skritch/releases/download/v0.1.0/Skritch_0.1.0_universal.dmg"
-          ><svg><use href="#download-icon" /></svg> Download for Mac <span>↗</span></a
-        >
-        <div class="download-meta">v0.1.0 · Universal DMG · About 55 MB</div>
-        <p class="system-note">
-          macOS 13.3 or later · Apple silicon & Intel<br />Free. MIT licensed. No account needed.
-        </p>
-        <div class="install-note">
-          <strong>A quick first-launch note</strong>
-          <p>
-            This release is Developer ID signed, but not yet notarized. macOS may ask you to approve it in
-            Privacy & Security. Drag Skritch into Applications, launch it, and allow Screen Recording when
-            prompted.
-            <a href="https://github.com/kaigani/skritch#install-on-macos">Full installation guide ↗</a>
-          </p>
+        <div class="platform-downloads">
+          <article class="platform-download" aria-labelledby="mac-download-title">
+            <h3 id="mac-download-title">For Mac</h3>
+            <a
+              class="button primary"
+              href="https://github.com/kaigani/skritch/releases/download/v0.1.0/Skritch_0.1.0_universal.dmg"
+              ><svg><use href="#download-icon" /></svg> Download for Mac <span>↗</span></a
+            >
+            <div class="download-meta">v0.1.0 · Universal DMG · About 55 MB</div>
+            <p class="system-note">macOS 13.3 or later · Apple silicon & Intel</p>
+            <div class="install-note">
+              <strong>First launch on Mac</strong>
+              <p>
+                Drag Skritch into Applications and allow Screen Recording when prompted. This release is
+                Developer ID signed, but not yet notarized. macOS may ask you to approve it in Privacy &
+                Security.
+                <a href="https://github.com/kaigani/skritch#install-on-macos">Installation guide ↗</a>
+              </p>
+            </div>
+            <div class="download-links">
+              <a href="https://github.com/kaigani/skritch/releases/download/v0.1.0/SHA256SUMS.txt"
+                >Checksums</a
+              >
+              <a
+                href="https://github.com/kaigani/skritch/releases/download/v0.1.0/Skritch_0.1.0_third-party-sources.tar.gz"
+                >Third-party sources</a
+              >
+            </div>
+          </article>
+          <article class="platform-download" aria-labelledby="windows-download-title">
+            <h3 id="windows-download-title">For Windows</h3>
+            <a
+              class="button primary"
+              href="https://github.com/kaigani/skritch/releases/download/v0.1.0/Skritch_0.1.0_x64-setup.exe"
+              ><svg><use href="#download-icon" /></svg> Download for Windows <span>↗</span></a
+            >
+            <div class="download-meta">v0.1.0 · x64 setup EXE · About 21 MB</div>
+            <p class="system-note">Windows 10 or 11 · 64-bit Intel & AMD</p>
+            <div class="install-note">
+              <strong>First launch on Windows</strong>
+              <p>
+                Run the setup EXE to install for your user account. FFmpeg is included; the installer can
+                install WebView2 if needed. This build is unsigned, so Windows may show an unknown-publisher
+                warning.
+                <a href="https://github.com/kaigani/skritch#install-on-windows">Installation guide ↗</a>
+              </p>
+            </div>
+            <div class="download-links">
+              <a
+                href="https://github.com/kaigani/skritch/releases/download/v0.1.0/Skritch_0.1.0_x64_portable.zip"
+                >Portable ZIP</a
+              >
+              <a
+                href="https://github.com/kaigani/skritch/releases/download/v0.1.0/Skritch_0.1.0_x64_en-US.msi"
+                >MSI installer</a
+              >
+              <a href="https://github.com/kaigani/skritch/releases/download/v0.1.0/SHA256SUMS-WINDOWS.txt"
+                >Checksums</a
+              >
+              <a
+                href="https://github.com/kaigani/skritch/releases/download/v0.1.0/Skritch_0.1.0_windows_third-party-sources.tar.gz"
+                >Third-party sources</a
+              >
+            </div>
+          </article>
         </div>
+        <p class="system-note">
+          Free. MIT licensed. No account needed. Video tools included on both platforms.
+        </p>
         <div class="download-links">
           <a href="https://github.com/kaigani/skritch/releases/tag/v0.1.0">Release notes</a
-          ><a href="https://github.com/kaigani/skritch/releases/download/v0.1.0/SHA256SUMS.txt"
-            >Verify download</a
           ><a href="https://github.com/kaigani/skritch">Explore the source ↗</a>
         </div>
       </section>
@@ -313,8 +360,9 @@
           <details>
             <summary>What about Windows?<span>+</span></summary>
             <p>
-              The codebase supports Windows and macOS. This first public download is the universal Mac app. A
-              packaged Windows release is not available yet; build instructions are in the GitHub README.
+              Windows x64 downloads are available above: a setup EXE, an MSI installer, and a portable ZIP.
+              The portable version needs WebView2 already installed. Keep its video tools and licenses next to
+              skritch.exe. These builds are unsigned; see the Windows installation guide for details.
             </p>
           </details>
           <details>
@@ -329,7 +377,7 @@
             <summary>Found a bug or have an idea?<span>+</span></summary>
             <p>
               This is an early public release.
-              <a href="https://github.com/kaigani/skritch/issues">Open an issue on GitHub</a> with your macOS
+              <a href="https://github.com/kaigani/skritch/issues">Open an issue on GitHub</a> with your OS
               version and a few steps to reproduce it. Please remove private information from any screenshots
               you share.
             </p>
@@ -352,10 +400,7 @@
           Skitch & Evernote.</span
         ><span
           >This app uses <a href="https://ffmpeg.org/">FFmpeg</a> under LGPL-2.1-or-later.
-          <a
-            href="https://github.com/kaigani/skritch/releases/download/v0.1.0/Skritch_0.1.0_third-party-sources.tar.gz"
-            >Source & notices</a
-          >.</span
+          <a href="https://github.com/kaigani/skritch/blob/main/THIRD_PARTY.md">Source & notices</a>.</span
         >
       </div>
     </footer>

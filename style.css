@@ -701,6 +701,7 @@ kbd {
   border-bottom-width: 3px;
   border-radius: 6px;
   font-size: 14px;
+  padding: 0 7px;
 }
 .shortcut > span {
   font-size: 9px;
@@ -786,6 +787,32 @@ kbd {
   line-height: 1.8;
   color: #9b8d9f;
   margin: 14px 0 27px;
+}
+.platform-downloads {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px;
+  max-width: 940px;
+  margin: 32px auto 0;
+  position: relative;
+}
+.platform-download {
+  border: 1px solid #ffffff18;
+  border-radius: 16px;
+  background: #ffffff03;
+  padding: 28px;
+}
+.platform-download h3 {
+  margin: 0 0 22px;
+  font-size: 22px;
+  letter-spacing: -0.5px;
+}
+.platform-download .button {
+  width: 100%;
+  padding: 0 16px;
+}
+.platform-download .download-links {
+  gap: 12px 20px;
 }
 .install-note {
   max-width: 630px;
@@ -1114,6 +1141,13 @@ kbd {
   .download-section {
     padding-top: 55px;
     padding-bottom: 45px;
+  }
+  .platform-downloads {
+    grid-template-columns: 1fr;
+    max-width: 470px;
+  }
+  .platform-download {
+    padding: 24px 18px;
   }
   .download-section h2 {
     font-size: 58px;
