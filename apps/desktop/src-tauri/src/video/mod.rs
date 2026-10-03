@@ -109,7 +109,7 @@ const HEVC_PLATFORM: &[&str] = &[];
 
 /// Software fallbacks after the platform encoders. libx264/libx265 only exist in GPL builds of
 /// ffmpeg (fine for development; the shipped LGPL sidecar will not list them).
-const H264_FALLBACK: &[&str] = &["libopenh264", "libx264", "mpeg4"];
+const H264_FALLBACK: &[&str] = &["libopenh264", "libx264"];
 const HEVC_FALLBACK: &[&str] = &["libx265"];
 const VP9_CANDIDATES: &[&str] = &["libvpx-vp9"];
 

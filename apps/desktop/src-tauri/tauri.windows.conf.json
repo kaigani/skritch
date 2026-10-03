@@ -1,0 +1,30 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "bundle": {
+    "targets": ["msi", "nsis"],
+    "category": "GraphicsDesign",
+    "shortDescription": "Screenshot, markup and video trim",
+    "externalBin": ["binaries/ffmpeg", "binaries/ffprobe"],
+    "resources": ["resources/licenses/"],
+    "fileAssociations": [
+      {
+        "ext": ["png", "jpg", "jpeg", "gif", "bmp", "tif", "tiff", "webp"],
+        "name": "Image",
+        "role": "Editor"
+      },
+      {
+        "ext": ["mp4", "mov", "m4v", "webm", "mkv", "avi"],
+        "name": "Video",
+        "role": "Editor"
+      },
+      {
+        "ext": ["skritch", "skritchv"],
+        "name": "Skritch Project",
+        "role": "Editor"
+      }
+    ],
+    "windows": {
+      "nsis": { "installMode": "currentUser" }
+    }
+  }
+}

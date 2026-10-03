@@ -5,7 +5,8 @@
 // node scripts/collect-licenses.mjs <pnpm-report.json> <cargo-metadata.json>
 import fs from 'node:fs';
 import path from 'node:path';
-const [jsFile, rustFile] = process.argv.slice(2);
+const [jsFile, rustFile, outputFile = 'apps/desktop/src-tauri/resources/licenses/DEPENDENCIES.txt'] =
+  process.argv.slice(2);
 if (!jsFile || !rustFile) throw new Error('Pass pnpm license report and Cargo metadata paths');
 const js = JSON.parse(fs.readFileSync(jsFile, 'utf8'));
 const rust = JSON.parse(fs.readFileSync(rustFile, 'utf8'));
@@ -41,5 +42,5 @@ for (const p of packages.sort((a, b) => a.name.localeCompare(b.name))) {
       files.map((f) => `\n--- ${path.basename(f)} ---\n${fs.readFileSync(f, 'utf8')}`).join('\n'),
   );
 }
-fs.writeFileSync('apps/desktop/src-tauri/resources/licenses/DEPENDENCIES.txt', sections.join('\n'));
+fs.writeFileSync(outputFile, sections.join('\n'));
 console.log(`Collected notices for ${packages.length} packages.`);

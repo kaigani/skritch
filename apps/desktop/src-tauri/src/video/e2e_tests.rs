@@ -42,7 +42,10 @@ fn make_clip(dir: &Path, name: &str, with_audio: bool) -> PathBuf {
     if with_audio {
         args.extend(strings(&["-f", "lavfi", "-i", "sine=frequency=440:sample_rate=44100", "-c:a", "aac"]));
     }
-    args.extend(strings(&["-t", "2", "-g", "10", "-bf", "2", "-pix_fmt", "yuv420p"]));
+    // LGPL sidecars have no libx264 (the default MP4 encoder). Use the same tested
+    // platform encoder as the application instead of requiring a GPL development build.
+    let encoder = encoders().h264.as_deref().expect("a working H.264 encoder");
+    args.extend(strings(&["-t", "2", "-g", "10", "-bf", "2", "-pix_fmt", "yuv420p", "-c:v", encoder]));
     args.push(out.to_string_lossy().into_owned());
     run_capture("ffmpeg", &args).expect("generating a test clip");
     out

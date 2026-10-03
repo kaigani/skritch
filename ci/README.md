@@ -7,7 +7,8 @@ The public download site currently uses the `gh-pages` branch and GitHub's built
 To enable Actions later, authorize GitHub CLI with `gh auth refresh -h github.com -s workflow`, then
 copy the desired templates into `.github/workflows/` and push:
 
-- `windows.yml`: TypeScript, unit/browser/native tests, then an unbundled Windows build.
+- `windows.yml`: builds LGPL Windows sidecars on Linux, then runs TypeScript, unit/browser/native
+  tests and packages Windows x64 EXE/MSI/portable ZIP artifacts with corresponding sources and checksums.
 - `macos.yml`: universal Mac CI build with LGPL sidecars. CI uses ad-hoc signing; public releases
   should use Developer ID signing as described in the root README.
 - `pages.yml`: optional Actions-based deployment of `site/`. Switch Pages source from branch-based

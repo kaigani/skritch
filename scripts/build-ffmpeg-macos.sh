@@ -50,7 +50,7 @@ for ARCH in arm64 x86_64; do
     --pkg-config-flags=--static --enable-static --disable-shared \
     --disable-autodetect --enable-videotoolbox --enable-audiotoolbox --enable-zlib \
     --enable-libvpx --enable-libopus \
-    --disable-doc --disable-debug --disable-ffplay --disable-network --disable-indevs --disable-outdevs
+    --disable-doc --disable-debug --disable-ffplay --disable-network --disable-indevs --enable-indev=lavfi --disable-outdevs
   make -j"$JOBS"
   mkdir -p "$WORK/bin-$ARCH" && cp ffmpeg ffprobe "$WORK/bin-$ARCH/"
   echo "::endgroup::"

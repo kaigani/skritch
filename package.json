@@ -6,6 +6,7 @@
     "dev": "pnpm --filter @skritch/desktop dev",
     "build": "pnpm --filter @skritch/desktop build",
     "build:mac": "CI=true pnpm tauri build --target universal-apple-darwin --ci",
+    "build:windows": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-windows.ps1",
     "test": "pnpm --filter @skritch/desktop test",
     "test:e2e": "pnpm --filter @skritch/desktop test:e2e",
     "typecheck": "pnpm --filter @skritch/desktop typecheck",

@@ -7,6 +7,20 @@
 - Switch the pending selection to a five-second timer or the entire current display before confirming.
 - Keyboard movement/resizing and Retina-correct dimensions; immediate capture remains the default.
 
+## Windows 0.1.0 download — 2026-10-02
+
+- Windows x64 setup EXE, MSI installer and portable ZIP, with bundled LGPL FFmpeg/FFprobe.
+- Media Foundation H.264/HEVC encoding and libvpx/Opus WebM support, checked against the running PC.
+- Bundled dependency notices, corresponding source archive and Windows SHA-256 checksums.
+- Repeatable `pnpm build:windows` command and an optional CI packaging workflow.
+- Fixed encoder probing in release sidecars by enabling the Lavfi input device; H.264 exports no
+  longer fall back to MPEG-4 Part 2 when no H.264 encoder is available.
+- Windows builds include the optional advanced capture controls described above.
+
+Windows downloads are unsigned. The original Mac download remains the 2026-09-29 build.
+Validation: 47 unit tests, 25 Chromium workflow tests and 45 native tests passed with bundled video
+tools; MSI extraction, native app launch, image opening, H.264/VP9 encoding and checksums verified.
+
 ## 0.1.0 — 2026-09-29
 
 First public Mac release. Universal binary for Apple silicon and Intel; macOS 13.3 or later.

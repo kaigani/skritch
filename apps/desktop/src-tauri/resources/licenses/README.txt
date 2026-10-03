@@ -19,3 +19,10 @@ modifying these components. Third-party components retain their own licenses.
 The source bundle includes FFmpeg's complete license description, libvpx's patent
 notice, Opus's copyright notice, and scripts/build-ffmpeg-macos.sh.
 DEPENDENCIES.txt contains notices collected from the Rust and JavaScript packages.
+
+Windows builds additionally bundle zlib 1.3.1 (zlib-LICENSE.txt), and their source
+archive is Skritch_0.1.0_windows_third-party-sources.tar.gz, provided alongside the
+Windows installers/portable ZIP. It includes the four upstream source archives,
+their notices and scripts/build-ffmpeg-windows.sh. DEPENDENCIES-WINDOWS.txt lists
+the Windows Rust and JavaScript dependency notices. Video tools can be replaced
+next to skritch.exe without changing the application executable.

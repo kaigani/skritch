@@ -1,7 +1,7 @@
 <p align="center"><img src="site/assets/icon.png" width="96" alt="Skritch icon"></p>
 <h1 align="center">Skritch</h1>
 <p align="center"><strong>Skritch scratches an itch.</strong><br>For the missing features you wished Skitch had.</p>
-<p align="center"><a href="https://kaigani.github.io/skritch/">Website</a> · <a href="https://github.com/kaigani/skritch/releases/latest">Download for Mac</a> · <a href="https://github.com/kaigani/skritch/issues">Report a bug</a> · <a href="LICENSE">MIT license</a></p>
+<p align="center"><a href="https://kaigani.github.io/skritch/">Website</a> · <a href="https://github.com/kaigani/skritch/releases/latest">Download for Mac & Windows</a> · <a href="https://github.com/kaigani/skritch/issues">Report a bug</a> · <a href="LICENSE">MIT license</a></p>
 
 Skritch is a local screenshot, annotation and quick video-editing app. It pairs a compact, familiar
 markup interface with multiple image layers, independent image crops, canvas cropping, editable
@@ -17,9 +17,17 @@ projects and native drag-to-save exports. Built with Tauri 2, React, TypeScript 
 - About 55 MB to download. FFmpeg and FFprobe are included; no separate installation is needed.
 - Developer ID signed. **Not yet notarized**; see the first-launch instructions below.
 - Free and MIT licensed. No account or cloud service required.
-- The source supports Windows, but a packaged Windows release is not available yet.
 
 [Release notes](CHANGELOG.md) · [SHA-256 checksums](https://github.com/kaigani/skritch/releases/download/v0.1.0/SHA256SUMS.txt) · [Third-party sources](https://github.com/kaigani/skritch/releases/download/v0.1.0/Skritch_0.1.0_third-party-sources.tar.gz)
+
+**[Download Skritch 0.1.0 for Windows x64](https://github.com/kaigani/skritch/releases/download/v0.1.0/Skritch_0.1.0_x64-setup.exe)**
+
+- About 21 MB for the setup EXE. Installs for the current user and can install WebView2 if needed.
+- FFmpeg and FFprobe are included. This build is **unsigned**; Windows may show an unknown-publisher warning.
+- Also available as an [MSI installer](https://github.com/kaigani/skritch/releases/download/v0.1.0/Skritch_0.1.0_x64_en-US.msi)
+  or [portable ZIP](https://github.com/kaigani/skritch/releases/download/v0.1.0/Skritch_0.1.0_x64_portable.zip).
+
+[Windows checksums](https://github.com/kaigani/skritch/releases/download/v0.1.0/SHA256SUMS-WINDOWS.txt) · [Windows third-party sources](https://github.com/kaigani/skritch/releases/download/v0.1.0/Skritch_0.1.0_windows_third-party-sources.tar.gz)
 
 ## What it does
 
@@ -85,6 +93,29 @@ codesign -dv /Applications/Skritch.app 2>&1
 ```
 
 The published Mac app is signed by **Developer ID Application: Kaigani Turner (3RYX74KM8T)**.
+
+## Install on Windows
+
+1. Download and run the **Windows x64 setup EXE** from [Releases](https://github.com/kaigani/skritch/releases).
+2. The installer installs Skritch for your account and offers to install Microsoft Edge WebView2 if needed.
+3. Launch **Skritch** from the Start menu. Closing the editor keeps the app in the notification area;
+   use **Skritch → Quit Skritch** or the tray's **Quit** command to exit.
+
+The Windows build is unsigned. Review the download source before proceeding through any
+unknown-publisher prompt. For a portable copy, extract the entire ZIP and run `skritch.exe`; keep
+`ffmpeg.exe`, `ffprobe.exe` and `licenses` next to it. Portable users need WebView2 already installed.
+The MSI is also available for Windows Installer deployments. All Windows downloads target **x64**.
+
+Verify a download against `SHA256SUMS-WINDOWS.txt`, for example in PowerShell:
+
+```powershell
+Get-FileHash .\Skritch_0.1.0_x64-setup.exe -Algorithm SHA256
+```
+
+Windows includes native menus and capture shortcuts, clipboard support, Explorer drag export, and a
+tray **Show Drop Zone** option for dropping files into the app. The Windows notification-area icon
+cannot accept file drops itself. H.264/HEVC encoder availability is checked on the running computer;
+WebM encoding is included through libvpx and Opus.
 
 ## A quick tour
 
@@ -227,6 +258,40 @@ ad-hoc override; they are not the Developer ID release download. No signing keys
 Bundled license notices live in `apps/desktop/src-tauri/resources/licenses/`; the release includes
 corresponding FFmpeg, libvpx and Opus sources plus the build script.
 
+### Build the Windows app
+
+On Windows x64, install the prerequisites above, including the Visual Studio **Desktop development
+with C++** workload and WebView2. Release builds bundle LGPL FFmpeg/FFprobe with Media Foundation
+H.264/HEVC encoding and libvpx/Opus WebM support. Encoder availability is checked on the running PC.
+
+Build the pinned video tools in Ubuntu under WSL (or on Linux with MinGW-w64):
+
+```sh
+sudo apt-get update
+sudo apt-get install -y mingw-w64 nasm pkg-config make curl
+# Run from the repository's root inside WSL:
+bash scripts/build-ffmpeg-windows.sh apps/desktop/src-tauri/binaries dist/windows/third-party-sources
+```
+
+Then, from PowerShell in the repository root:
+
+```powershell
+pnpm --filter @skritch/desktop exec playwright install chromium
+pnpm build:windows
+```
+
+The command runs lint, TypeScript, unit, Chromium workflow and native video tests, collects Windows
+dependency notices, and creates **NSIS setup EXE**, **MSI**, **portable ZIP**, **corresponding video-tool
+sources**, and **SHA256SUMS.txt** under `dist/windows/`. For a rebuild after checking the same sources,
+`pnpm build:windows -- -SkipTests` skips the tests. Sidecars are validated before packaging; missing
+sources prevent the distribution step from completing.
+
+Run the setup EXE to install for the current user, or extract the portable ZIP completely and run
+`skritch.exe`. Keep its video tools and license folder alongside it. Installers can install WebView2;
+portable users need the runtime already installed. These builds are **unsigned**, so Windows may
+show an unknown-publisher warning. Windows file associations, tray capture, clipboard, drag export
+and the Drop Zone are included. Build outputs are local and are not automatically published.
+
 ### Test
 
 ```sh
@@ -287,7 +352,7 @@ steps and expected behavior. Remove private information from logs and screenshot
 checks above before opening a PR. Keep platform-specific integration behind the native bridge, preserve
 Undo/Redo for document changes, and keep the screenshot workflow compact.
 
-This is an early public release. Current limits include no notarization, no packaged Windows download,
+This is an early public release. Current limits include no Mac notarization, no Windows code signing,
 no PDF import, and no cloud sync. The implementation history is in [DECISIONS.md](DECISIONS.md); older
 entries describe earlier milestones and may be superseded by the current README.
 

@@ -1,26 +1,43 @@
 name: Windows CI
-on: [push, pull_request]
-
-# macOS is built by macos.yml (it needs the LGPL FFmpeg sidecars that the macOS bundle embeds).
+on: [push, pull_request, workflow_dispatch]
 jobs:
+  sidecars:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y mingw-w64 nasm pkg-config make curl
+      - run: bash scripts/build-ffmpeg-windows.sh apps/desktop/src-tauri/binaries dist/windows/third-party-sources
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-sidecars
+          path: |
+            apps/desktop/src-tauri/binaries/*-x86_64-pc-windows-msvc.exe
+            apps/desktop/src-tauri/resources/licenses/zlib-LICENSE.txt
+            dist/windows/third-party-sources/
+          if-no-files-found: error
   build:
+    needs: sidecars
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { name: windows-sidecars, path: . }
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: pnpm }
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with: { workspaces: apps/desktop/src-tauri }
-      - uses: FedericoCarboni/setup-ffmpeg@v3
       - run: pnpm install --frozen-lockfile
-      - run: pnpm lint
-      - run: pnpm typecheck
-      - run: pnpm test
-      - run: pnpm exec playwright install --with-deps chromium
-        working-directory: apps/desktop
-      - run: pnpm test:e2e --project=chromium
-      - run: cargo test
-        working-directory: apps/desktop/src-tauri
-      - run: pnpm tauri build --debug --no-bundle
+      - run: pnpm --filter @skritch/desktop exec playwright install chromium
+      - run: pnpm build:windows
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Skritch-windows-x64
+          path: |
+            dist/windows/*-setup.exe
+            dist/windows/*.msi
+            dist/windows/*.zip
+            dist/windows/*_third-party-sources.tar.gz
+            dist/windows/SHA256SUMS.txt
+          if-no-files-found: error
