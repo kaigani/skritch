@@ -46,6 +46,7 @@ fn make_clip(dir: &Path, name: &str, with_audio: bool) -> PathBuf {
     // platform encoder as the application instead of requiring a GPL development build.
     let encoder = encoders().h264.as_deref().expect("a working H.264 encoder");
     args.extend(strings(&["-t", "2", "-g", "10", "-bf", "2", "-pix_fmt", "yuv420p", "-c:v", encoder]));
+    args.extend(strings(render::encoder_options(encoder)));
     args.push(out.to_string_lossy().into_owned());
     run_capture("ffmpeg", &args).expect("generating a test clip");
     out

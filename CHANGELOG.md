@@ -1,8 +1,8 @@
 # Changelog
 
-## 0.2.0 — Unreleased
+## 0.2.0 — 2026-10-05
 
-Not yet published; the public downloads are still 0.1.0.
+Mac release (universal DMG). Windows downloads remain 0.1.0.
 
 - Faster Screen Snap: the selection overlay appears in about 0.3–0.5 s instead of about 3 s. Overlay
   windows are created ahead of time and reused, the frozen screen is sent as raw pixels instead of
@@ -18,6 +18,9 @@ Not yet published; the public downloads are still 0.1.0.
   handles and W × H fields already grow or trim the canvas.
 - Scale shows the resulting W × H in pixels, a −/+ slider under the canvas and a live preview.
 - Crop and Scale actions read ✕ Cancel / ✓ Apply.
+- Mac video tools rebuilt with the Lavfi input device, so the startup encoder probe works and
+  H.264/HEVC exports use VideoToolbox (the Windows 0.1.0 fix, now on Mac). VideoToolbox may fall
+  back to Apple's software encoder for sizes the hardware rejects, e.g. small videos on Intel Macs.
 - Optional advanced capture controls in Preferences: adjust a region/window after selection, move it,
   resize using corner handles or exact pixel dimensions, and lock its aspect ratio.
 - Switch the pending selection to a five-second timer or the entire current display before confirming.

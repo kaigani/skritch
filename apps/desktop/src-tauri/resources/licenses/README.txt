@@ -1,4 +1,4 @@
-Skritch v0.1.0 — bundled software notices
+Skritch v0.2.0 — bundled software notices
 
 Skritch source code: https://github.com/kaigani/skritch
 Skritch is Copyright (c) 2026 Kaigani Turner, distributed under the MIT license.
@@ -9,7 +9,7 @@ separate executable sidecars, without GPL components or network support.
 
 Corresponding unmodified source archives, their license texts, and the build
 script are distributed with this release:
-https://github.com/kaigani/skritch/releases/download/v0.1.0/Skritch_0.1.0_third-party-sources.tar.gz
+https://github.com/kaigani/skritch/releases/download/v0.2.0/Skritch_0.2.0_third-party-sources.tar.gz
 
 The sidecar executables can be replaced or rebuilt from source. Replacing signed
 bundle contents invalidates the app signature; development builds can use tools
@@ -21,7 +21,7 @@ notice, Opus's copyright notice, and scripts/build-ffmpeg-macos.sh.
 DEPENDENCIES.txt contains notices collected from the Rust and JavaScript packages.
 
 Windows builds additionally bundle zlib 1.3.1 (zlib-LICENSE.txt), and their source
-archive is Skritch_0.1.0_windows_third-party-sources.tar.gz, provided alongside the
+archive is Skritch_<version>_windows_third-party-sources.tar.gz, provided alongside the
 Windows installers/portable ZIP. It includes the four upstream source archives,
 their notices and scripts/build-ffmpeg-windows.sh. DEPENDENCIES-WINDOWS.txt lists
 the Windows Rust and JavaScript dependency notices. Video tools can be replaced

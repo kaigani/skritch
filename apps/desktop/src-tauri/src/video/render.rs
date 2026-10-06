@@ -209,14 +209,21 @@ fn video_kbps(job: &RenderJob) -> u32 {
 /// `-c:v` plus bitrate and per-encoder speed settings.
 pub fn encoder_args(encoder: &str, kbps: u32) -> Vec<String> {
     let mut args = vec!["-c:v".to_string(), encoder.to_string(), "-b:v".to_string(), format!("{kbps}k")];
-    let extra: &[&str] = match encoder {
+    args.extend(encoder_options(encoder).iter().map(|s| s.to_string()));
+    args
+}
+
+/// Per-encoder settings shared by renders, proxies and the startup encoder probe.
+pub fn encoder_options(encoder: &str) -> &'static [&'static str] {
+    match encoder {
         "libx264" | "libx265" => &["-preset", "fast"],
         "h264_nvenc" | "hevc_nvenc" => &["-preset", "p4"],
+        // Intel Macs' hardware H.264 encoder rejects small frames (e.g. 320×240, error -12903);
+        // let VideoToolbox fall back to Apple's software encoder instead of failing.
+        "h264_videotoolbox" | "hevc_videotoolbox" => &["-allow_sw", "1"],
         "libvpx-vp9" => &["-deadline", "good", "-cpu-used", "4", "-row-mt", "1"],
         _ => &[],
-    };
-    args.extend(extra.iter().map(|s| s.to_string()));
-    args
+    }
 }
 
 pub fn build_render_args(job: &RenderJob, encoders: &Encoders, graph: &GraphArg) -> AppResult<Vec<String>> {

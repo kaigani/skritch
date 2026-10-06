@@ -11,14 +11,14 @@ projects and native drag-to-save exports. Built with Tauri 2, React, TypeScript 
 
 ## Download
 
-**[Download Skritch 0.1.0 for macOS](https://github.com/kaigani/skritch/releases/download/v0.1.0/Skritch_0.1.0_universal.dmg)**
+**[Download Skritch 0.2.0 for macOS](https://github.com/kaigani/skritch/releases/download/v0.2.0/Skritch_0.2.0_universal.dmg)**
 
 - macOS **13.3 or later**. One universal DMG for **Apple silicon and Intel**.
 - About 55 MB to download. FFmpeg and FFprobe are included; no separate installation is needed.
 - Developer ID signed. **Not yet notarized**; see the first-launch instructions below.
 - Free and MIT licensed. No account or cloud service required.
 
-[Release notes](CHANGELOG.md) · [SHA-256 checksums](https://github.com/kaigani/skritch/releases/download/v0.1.0/SHA256SUMS.txt) · [Third-party sources](https://github.com/kaigani/skritch/releases/download/v0.1.0/Skritch_0.1.0_third-party-sources.tar.gz)
+[Release notes](CHANGELOG.md) · [SHA-256 checksums](https://github.com/kaigani/skritch/releases/download/v0.2.0/SHA256SUMS.txt) · [Third-party sources](https://github.com/kaigani/skritch/releases/download/v0.2.0/Skritch_0.2.0_third-party-sources.tar.gz)
 
 **[Download Skritch 0.1.0 for Windows x64](https://github.com/kaigani/skritch/releases/download/v0.1.0/Skritch_0.1.0_x64-setup.exe)**
 
@@ -82,7 +82,7 @@ Repeated denied attempts show a Settings message instead of reopening the blocki
 Download `SHA256SUMS.txt` alongside the DMG, then compare:
 
 ```sh
-shasum -a 256 Skritch_0.1.0_universal.dmg
+shasum -a 256 Skritch_0.2.0_universal.dmg
 ```
 
 You can also inspect the installed app's signature:
@@ -361,7 +361,7 @@ entries describe earlier milestones and may be superseded by the current README.
 Skritch is **[MIT licensed](LICENSE)**, copyright © 2026 Kaigani Turner. Third-party software retains
 its own licenses; see [THIRD_PARTY.md](THIRD_PARTY.md) and the bundled notices. The app uses code from
 [FFmpeg](https://ffmpeg.org/) under LGPL-2.1-or-later; its corresponding source is included in the
-[release source archive](https://github.com/kaigani/skritch/releases/download/v0.1.0/Skritch_0.1.0_third-party-sources.tar.gz).
+[release source archive](https://github.com/kaigani/skritch/releases/download/v0.2.0/Skritch_0.2.0_third-party-sources.tar.gz).
 
 With appreciation for the simple, useful spirit of Skitch. Skitch and Evernote are trademarks of
 their respective owners; this project is independent.

@@ -33,11 +33,12 @@ linked below does not include zlib or the Windows build script.
 
 The release invokes FFmpeg and FFprobe as separate executables. They are built from the pinned
 upstream sources by [`scripts/build-ffmpeg-macos.sh`](scripts/build-ffmpeg-macos.sh), without GPL
-components or network support. The script checks for `--enable-gpl` and non-system dynamic libraries.
+components or network support. The Lavfi input device is enabled for the app's synthetic encoder
+probes (from 0.2.0; the 0.1.0 Mac tools lacked it). The script checks for `--enable-gpl` and non-system dynamic libraries.
 The source archive distributed alongside each release contains these upstream tarballs, notices and
 build script:
 
-**[Download the v0.1.0 corresponding source archive](https://github.com/kaigani/skritch/releases/download/v0.1.0/Skritch_0.1.0_third-party-sources.tar.gz)**
+**[Download the v0.2.0 corresponding source archive](https://github.com/kaigani/skritch/releases/download/v0.2.0/Skritch_0.2.0_third-party-sources.tar.gz)**
 
 Upstream sources: [FFmpeg](https://ffmpeg.org/releases/ffmpeg-7.1.1.tar.gz),
 [libvpx](https://github.com/webmproject/libvpx/releases/tag/v1.15.0),

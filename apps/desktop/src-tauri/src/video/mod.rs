@@ -165,11 +165,12 @@ fn encoder_works(name: &str) -> bool {
         "yuv420p",
         "-c:v",
         name,
-        "-f",
-        "null",
-        "-",
     ]
-    .map(String::from);
+    .map(String::from)
+    .into_iter()
+    .chain(render::encoder_options(name).iter().map(|s| s.to_string()))
+    .chain(["-f", "null", "-"].map(String::from))
+    .collect::<Vec<_>>();
     run_capture("ffmpeg", &args).is_ok()
 }
 
