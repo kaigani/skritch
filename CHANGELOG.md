@@ -4,6 +4,9 @@
 
 Mac release (universal DMG). Windows downloads remain 0.1.0.
 
+2026-10-06: the DMG was replaced with a notarized and stapled copy of the same app, so macOS no longer
+reports "Apple could not verify Skritch.app". The app itself is unchanged.
+
 - Faster Screen Snap: the selection overlay appears in about 0.3–0.5 s instead of about 3 s. Overlay
   windows are created ahead of time and reused, the frozen screen is sent as raw pixels instead of
   being encoded to PNG first, and window listing overlaps the screen grab.

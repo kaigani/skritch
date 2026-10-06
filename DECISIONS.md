@@ -86,7 +86,7 @@ Developer ID signing; only certificate-free CI smoke-test artifacts use ad-hoc s
 26. **LGPL FFmpeg sidecars are built from source** (`scripts/build-ffmpeg-macos.sh`: FFmpeg 7.1.1 + libvpx +
     libopus, VideoToolbox/AudioToolbox, static, no GPL) and cached in CI. The script fails if the build is GPL or
     links non-system dylibs. `scripts/dev-ffmpeg-sidecars.sh` stages Homebrew's ffmpeg for local dev builds only.
-27. **Ad-hoc signed (`signingIdentity: "-"`), not notarized.** Distribution needs an Apple Developer ID certificate
+27. *(Superseded by #34.)* **Ad-hoc signed (`signingIdentity: "-"`), not notarized.** Distribution needs an Apple Developer ID certificate
     and notarization credentials (plan M6). Until then Gatekeeper blocks the first launch of a downloaded DMG:
     right-click → Open, or `xattr -dr com.apple.quarantine /Applications/Skritch.app`.
 28. **Minimum macOS 13.3** (Safari 16.4 WebKit: OffscreenCanvas, `roundRect`, `requestVideoFrameCallback`). A
@@ -104,3 +104,8 @@ Developer ID signing; only certificate-free CI smoke-test artifacts use ad-hoc s
     index). Playwright's *Windows* WebKit ignores MP4 edit lists, so B-frame H.264 shows frame N−2 there
     (marked as an expected failure). macOS AVFoundation honours edit lists, and the macOS workflow runs the same
     test on Mac WebKit, where it must pass.
+34. **Notarized as a separate post-build step** (`scripts/notarize-mac.sh`, `pnpm notarize:mac`). Tauri only
+    notarizes with credentials in environment variables; the script uses a notarytool keychain profile instead,
+    so no Apple password is exported for the build. It staples the app before rebuilding the DMG with Tauri's
+    `bundle_dmg.sh`, so the app inside the DMG passes Gatekeeper offline, then notarizes and staples the DMG.
+    Since macOS 15, signed-but-unnotarized downloads can only be opened through Privacy & Security → Open Anyway.

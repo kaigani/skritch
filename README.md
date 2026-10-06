@@ -15,7 +15,7 @@ projects and native drag-to-save exports. Built with Tauri 2, React, TypeScript 
 
 - macOS **13.3 or later**. One universal DMG for **Apple silicon and Intel**.
 - About 55 MB to download. FFmpeg and FFprobe are included; no separate installation is needed.
-- Developer ID signed. **Not yet notarized**; see the first-launch instructions below.
+- Developer ID signed and notarized by Apple.
 - Free and MIT licensed. No account or cloud service required.
 
 [Release notes](CHANGELOG.md) · [SHA-256 checksums](https://github.com/kaigani/skritch/releases/download/v0.2.0/SHA256SUMS.txt) · [Third-party sources](https://github.com/kaigani/skritch/releases/download/v0.2.0/Skritch_0.2.0_third-party-sources.tar.gz)
@@ -51,9 +51,9 @@ and does not include Evernote integration.
 1. Download the DMG from this repository's [Releases](https://github.com/kaigani/skritch/releases).
 2. Open it and drag **Skritch.app** into **Applications**. Quit an older copy before replacing it.
 3. Launch **Skritch** from Applications, rather than running the executable inside the bundle or build folder.
-4. This early release is signed but not notarized. If macOS blocks the first launch, follow Apple's
-   [instructions for opening an app from an identified developer](https://support.apple.com/en-us/102445):
-   open **System Settings → Privacy & Security**, review the app, and use **Open Anyway** if you choose to proceed.
+4. The app is notarized, so macOS asks only to confirm opening an app downloaded from the internet.
+   If you still see "Apple could not verify Skritch.app", you have a DMG downloaded before 6 October 2026;
+   download it again, or use **Open Anyway** in **System Settings → Privacy & Security**.
 5. When prompted, allow **Screen Recording** for Skritch in **System Settings → Privacy & Security**.
    Quit and reopen the app if macOS requests it.
 
@@ -92,7 +92,13 @@ codesign --verify --deep --strict /Applications/Skritch.app
 codesign -dv /Applications/Skritch.app 2>&1
 ```
 
-The published Mac app is signed by **Developer ID Application: Kaigani Turner (3RYX74KM8T)**.
+The published Mac app is signed by **Developer ID Application: Kaigani Turner (3RYX74KM8T)**, and both
+the app and the DMG carry a stapled notarization ticket:
+
+```sh
+spctl --assess --type execute --verbose=2 /Applications/Skritch.app   # source=Notarized Developer ID
+xcrun stapler validate /Applications/Skritch.app
+```
 
 ## Install on Windows
 
@@ -254,7 +260,20 @@ can set `APPLE_SIGNING_IDENTITY` to their own certificate. Setting it to `-` cre
 build, whose privacy grants may not survive a rebuild. The optional CI templates explicitly use this
 ad-hoc override; they are not the Developer ID release download. No signing keys are stored in this repository.
 
-`build:mac` uses CI-mode DMG packaging to avoid Finder automation. Notarization is not configured yet.
+`build:mac` uses CI-mode DMG packaging to avoid Finder automation.
+
+To notarize a Developer ID build for distribution, store notarytool credentials in the keychain once
+(an [app-specific password](https://support.apple.com/en-us/102654) or App Store Connect API key),
+then run the notarize step after `build:mac`:
+
+```sh
+xcrun notarytool store-credentials fives-notary --apple-id <apple-id> --team-id <team-id> --password <app-specific-password>
+pnpm notarize:mac   # NOTARY_PROFILE=<name> to use a different keychain profile
+```
+
+`scripts/notarize-mac.sh` notarizes and staples `Skritch.app`, rebuilds the DMG around the stapled app,
+then signs, notarizes and staples the DMG. Apple's notary service is an automated check, usually a few
+minutes per upload; it fails with HTTP 403 if a Developer Program agreement is waiting to be accepted.
 Bundled license notices live in `apps/desktop/src-tauri/resources/licenses/`; the release includes
 corresponding FFmpeg, libvpx and Opus sources plus the build script.
 
@@ -352,7 +371,7 @@ steps and expected behavior. Remove private information from logs and screenshot
 checks above before opening a PR. Keep platform-specific integration behind the native bridge, preserve
 Undo/Redo for document changes, and keep the screenshot workflow compact.
 
-This is an early public release. Current limits include no Mac notarization, no Windows code signing,
+This is an early public release. Current limits include no Windows code signing,
 no PDF import, and no cloud sync. The implementation history is in [DECISIONS.md](DECISIONS.md); older
 entries describe earlier milestones and may be superseded by the current README.
 
