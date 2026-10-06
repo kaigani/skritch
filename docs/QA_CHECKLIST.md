@@ -17,7 +17,7 @@ below still require manual OS-level interaction.
 - [x] Arrow/Text/Shapes/Pen/Highlighter/Stamp/Pixelate render with the white halo (browser and WebView2)
 - [x] Swatch change re-colours the selected object
 - [x] Add to Canvas → layer selected, Select tool active; drag past the edge grows the canvas; one undo restores it
-- [x] Crop handle dragged outward grows with white fill; Canvas (numeric + anchor) and Scale sub-modes
+- [x] Crop handle dragged outward grows with white fill; numeric W/H and Scale sub-mode
 - [x] Copy image → paste back (arboard both directions) → arrival dialog
 - [ ] Drag Me into Explorer / Finder / Slack / Mail / browser / Word (6 targets per platform)
 - [ ] Save / Save As / Export TIFF, PDF, BMP, GIF via the native dialog; re-open a Skritch PNG and it is editable

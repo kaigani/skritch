@@ -3,7 +3,7 @@
 use serde::Serialize;
 use xcap::Window;
 
-use super::displays::{DisplayShot, MonitorBounds};
+use super::displays::MonitorBounds;
 use super::region::Rect;
 
 /// A candidate window in physical px relative to one display's shot, topmost first.
@@ -26,16 +26,9 @@ pub struct GlobalWindow {
     pub title: String,
 }
 
-/// Candidates per display (same order as `shots`). Minimised windows and Skritch's own windows are
-/// excluded. Failure to enumerate windows degrades to "no candidates" rather than failing the snap.
-pub fn candidates(shots: &[DisplayShot]) -> Vec<Vec<WindowRect>> {
-    let windows = global_candidates();
-    shots
-        .iter()
-        .map(|s| windows.iter().filter_map(|w| to_display(w, &s.bounds, s.image.width(), s.image.height())).collect())
-        .collect()
-}
-
+/// Top-level windows in global coordinates, topmost first. Minimised windows and Skritch's own
+/// windows are excluded. Failure to enumerate windows degrades to "no candidates" rather than
+/// failing the snap.
 pub fn global_candidates() -> Vec<GlobalWindow> {
     let own_pid = std::process::id();
     Window::all()

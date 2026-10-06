@@ -15,7 +15,8 @@ export interface CaptureResult {
   capturedAt?: number;
 }
 export interface OverlayInfo {
-  shotPath: string;
+  /** Identifies the capture; overlay pages are reused between captures. */
+  session: number;
   width: number;
   height: number;
   scale: number;
@@ -70,6 +71,10 @@ export interface Backend {
   /** macOS: System Settings › Privacy & Security › Screen Recording. */
   openScreenRecordingSettings(): Promise<void>;
   overlayInfo(display: number): Promise<OverlayInfo>;
+  /** The frozen display, ready to draw (raw pixels from the backend, no image decode). */
+  overlayShot(display: number): Promise<CanvasImageSource & { width: number; height: number }>;
+  /** The overlay has drawn the shot and may be shown. */
+  overlayReady(display: number, session: number): Promise<void>;
   overlayFinish(display: number, rect: Rect | null, timed: boolean): Promise<void>;
   permissionStatus(): Promise<'granted' | 'denied' | 'unknown'>;
   clipboardReadImage(): Promise<Uint8Array | null>;
@@ -148,6 +153,13 @@ async function tauriBackend(): Promise<Backend> {
     captureLast: () => invoke('capture_last'),
     openScreenRecordingSettings: () => invoke('open_screen_recording_settings'),
     overlayInfo: (display) => invoke('capture_overlay_info', { display }),
+    overlayShot: async (display) => {
+      // [width u32 LE][height u32 LE][RGBA8 rows]
+      const buf = await invoke<ArrayBuffer>('capture_overlay_pixels', { display });
+      const [width, height] = new Uint32Array(buf, 0, 2);
+      return createImageBitmap(new ImageData(new Uint8ClampedArray(buf, 8, width * height * 4), width, height));
+    },
+    overlayReady: (display, session) => invoke('capture_overlay_ready', { display, session }),
     overlayFinish: (display, rect, timed) => invoke('capture_overlay_finish', { display, rect, timed }),
     permissionStatus: () => invoke('capture_permission_status'),
     clipboardReadImage: async () => {
@@ -189,10 +201,8 @@ async function tauriBackend(): Promise<Backend> {
     setDropZoneVisible: (visible) => invoke('tray_set_dropzone_visible', { visible }),
     showMainWindow: () => invoke('show_main_window'),
     takeLaunchPaths: () => invoke('take_launch_paths'),
-    dragOut: async (path, iconPath) => {
-      const { startDrag } = await import('@crabnebula/tauri-plugin-drag');
-      await startDrag({ item: [path], icon: iconPath, mode: 'copy' });
-    },
+    // Native drag that hides this window while it runs (src-tauri/src/windows/dragout.rs).
+    dragOut: (path, iconPath) => invoke('drag_out', { path, icon: iconPath }),
     prefsGet: (key) => store.get(key),
     prefsSet: async (key, value) => {
       await store.set(key, value);

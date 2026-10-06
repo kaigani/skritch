@@ -1,5 +1,6 @@
 //! Window helpers shared by the tray, capture and single-instance code, plus the Windows Drop Zone.
 
+pub mod dragout;
 pub mod dropzone;
 
 use tauri::{AppHandle, Manager, WebviewWindow};

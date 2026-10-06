@@ -6,7 +6,7 @@ import { DEFAULT_COLOR } from '../model/types';
 export type ToolId =
   'select' | 'arrow' | 'text' | 'shape' | 'pen' | 'highlight' | 'stamp' | 'pixelate' | 'crop';
 export type ShapeTool = ShapeKind | 'line';
-export type CropMode = 'crop' | 'canvas' | 'scale';
+export type CropMode = 'crop' | 'scale';
 export type AppMode = 'empty' | 'image' | 'video';
 
 export interface Toast {
@@ -22,7 +22,6 @@ export interface CropState {
   mode: CropMode;
   rect: Rect;
   lockRatio: boolean;
-  anchor: number;
   scalePct: number;
 }
 

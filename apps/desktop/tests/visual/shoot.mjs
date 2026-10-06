@@ -48,7 +48,7 @@ const flows = {
     );
     await page.reload();
     await capture();
-    await page.waitForSelector('[data-testid=title]');
+    await page.waitForSelector('[data-testid=doc-size]');
     const b = await canvasBox();
     const cx = b.x + b.width / 2;
     const cy = b.y + b.height / 2;

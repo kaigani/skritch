@@ -10,11 +10,12 @@ type Drag = { start: Pt; original: Rect | null; kind: 'draw' | 'move' | Corner; 
 const corners: Corner[] = ['nw', 'ne', 'sw', 'se'];
 const cornerNames = { nw: 'top left', ne: 'top right', sw: 'bottom left', se: 'bottom right' };
 
-export function RegionOverlay() {
-  const display = Number(new URLSearchParams(location.search).get('display') ?? 0);
+/** One capture's selection UI. The host remounts it (via `key`) for every capture session. */
+export function RegionOverlay({ display }: { display: number }) {
   const root = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
-  const image = useRef<HTMLImageElement | null>(null);
+  const image = useRef<CanvasImageSource | null>(null);
+  const announced = useRef(false);
   const drag = useRef<Drag | null>(null);
   const finishing = useRef(false);
   const [info, setInfo] = useState<OverlayInfo | null>(null);
@@ -35,13 +36,13 @@ export function RegionOverlay() {
 
   useEffect(() => {
     let disposed = false;
-    void Promise.all([ipc.overlayInfo(display), ipc.prefsGet<Partial<Prefs>>('prefs')])
-      .then(async ([i, p]) => {
-        const im = new Image();
-        im.src = ipc.fileUrl(i.shotPath);
-        await im.decode();
-        if (disposed) return;
-        image.current = im;
+    void Promise.all([ipc.overlayInfo(display), ipc.prefsGet<Partial<Prefs>>('prefs'), ipc.overlayShot(display)])
+      .then(([i, p, shot]) => {
+        if (disposed) {
+          if ('close' in shot) (shot as ImageBitmap).close();
+          return;
+        }
+        image.current = shot;
         setAdvanced(p?.advancedCapture === true);
         setTimer(i.mode === 'timed');
         setInfo(i);
@@ -55,6 +56,10 @@ export function RegionOverlay() {
     return () => {
       disposed = true;
       window.removeEventListener('resize', resize);
+      // Free the (large) bitmap as soon as this capture is over.
+      const shot = image.current;
+      if (shot && 'close' in shot) (shot as ImageBitmap).close();
+      image.current = null;
     };
   }, [display]);
 
@@ -132,7 +137,13 @@ export function RegionOverlay() {
       g.lineTo(cursor.x / kx, viewport.height);
       g.stroke();
     }
-  }, [info, shown, cursor, adjusting, kx, ky, viewport]);
+    // First frame drawn: the (still hidden) overlay window may now be shown. Not via rAF, which
+    // WebKit does not run while the window is hidden.
+    if (!announced.current) {
+      announced.current = true;
+      void ipc.overlayReady(display, info.session);
+    }
+  }, [info, shown, cursor, adjusting, kx, ky, viewport, display]);
 
   const point = (e: ReactPointerEvent): Pt => screenPoint({ x: e.clientX * kx, y: e.clientY * ky }, info!);
   const begin = (e: ReactPointerEvent, kind: Drag['kind']) => {

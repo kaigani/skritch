@@ -12,6 +12,7 @@ import { useVideo } from './state/video';
 import { ToolRail } from './ui/ToolRail';
 import { TopBar } from './ui/TopBar';
 import { BottomBar } from './ui/BottomBar';
+import { ScaleSlider } from './ui/CropBar';
 import { TextEditor } from './ui/TextEditor';
 import { Busy, ContextMenu, DropHover, EmptyState, FirstRunTip, Toasts } from './ui/Overlays';
 import { ArrivalDialog } from './ui/dialogs/ArrivalDialog';
@@ -126,6 +127,7 @@ export function App() {
             <CanvasView />
             <TextEditor />
             {mode === 'empty' && <EmptyState />}
+            <ScaleSlider />
             <FirstRunTip />
           </div>
         </div>

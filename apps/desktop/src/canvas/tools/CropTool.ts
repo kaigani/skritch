@@ -36,7 +36,6 @@ export class CropTool implements Tool {
           mode: 'crop',
           rect: image ? { x: image.x, y: image.y, w: image.w, h: image.h } : { ...doc.canvas },
           lockRatio: false,
-          anchor: 4,
           scalePct: 100,
         },
       });

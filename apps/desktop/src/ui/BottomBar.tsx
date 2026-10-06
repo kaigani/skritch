@@ -3,8 +3,11 @@ import { ipc } from '../ipc';
 import { renameDocument } from '../model/commands/document';
 import { renderer } from '../canvas/Renderer';
 import { IMAGE_FORMATS, formatInfo, safeFileStem } from '../export/formats';
-import { docState, useDoc } from '../state/document';
+import { docState, isDirty, useDoc } from '../state/document';
 import { ui, useUi } from '../state/ui';
+import { useVideo } from '../state/video';
+import { seqLength } from '../model/edl';
+import { formatTimecode } from '../model/timecode';
 import { DragMeTab } from './DragMeTab';
 import { Icon } from './icons';
 import { MenuItem, Popover } from './Popover';
@@ -20,7 +23,7 @@ export function BottomBar() {
   const popover = useUi((s) => s.popover);
   const set = useUi((s) => s.set);
   const doc = useDoc((s) => s.doc);
-  const hasDoc = !!doc;
+  const dirty = useDoc(isDirty);
   const fmtRef = useRef<HTMLButtonElement>(null);
 
   return (
@@ -39,17 +42,23 @@ export function BottomBar() {
             {formatInfo(dragFormat).label} <span className="caret">▼</span>
           </button>
         )}
-        <DragMeTab disabled={mode === 'empty' || (mode === 'image' && !hasDoc)} />
+        <DragMeTab disabled={mode === 'empty' || (mode === 'image' && !doc)} />
       </div>
       {mode === 'image' && doc ? (
-        <Filename key={doc.id} id={doc.id} title={doc.meta.title} />
+        <div className="doc-name" data-testid="doc-name">
+          <Filename key={doc.id} id={doc.id} title={doc.meta.title} />
+          {dirty && <span className="edited">Edited</span>}
+        </div>
+      ) : mode === 'video' ? (
+        <VideoSummary />
       ) : (
-        <span className="export-hint">
-          {mode === 'empty' ? 'Snap · Mark up · Share' : 'Drag to save a file'}
-        </span>
+        <span className="export-hint">Snap · Mark up · Share</span>
       )}
-      {mode === 'image' && hasDoc && (
+      {mode === 'image' && doc && (
         <div className="zoom">
+          <span className="doc-size" data-testid="doc-size">
+            {doc.canvas.w} × {doc.canvas.h}
+          </span>
           <input
             type="range"
             min={0}
@@ -91,6 +100,19 @@ export function BottomBar() {
         </Popover>
       )}
     </footer>
+  );
+}
+
+function VideoSummary() {
+  const project = useVideo((s) => s.project);
+  if (!project) return <span className="export-hint">Drag to save a file</span>;
+  const n = project.sequence.length;
+  return (
+    <span className="video-summary" data-testid="video-summary">
+      Untitled Video — {n} clip{n === 1 ? '' : 's'} ·{' '}
+      {formatTimecode(seqLength(project.sequence), project.output.fps)} ·{' '}
+      {Math.round(project.output.fps * 100) / 100} fps
+    </span>
   );
 }
 

@@ -114,17 +114,3 @@ export function rectEdgeDistance(p: Pt, r: Rect): number {
 export const center = (r: Rect): Pt => ({ x: r.x + r.w / 2, y: r.y + r.h / 2 });
 
 export const rectEq = (a: Rect, b: Rect): boolean => a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h;
-
-/** 3×3 anchor grid position (0..8, row-major) → anchored rect for the Canvas sub-mode (§5.3). */
-export function anchoredRect(canvas: Rect, w: number, h: number, anchor: number): Rect {
-  const ax = anchor % 3; // 0 left, 1 centre, 2 right
-  const ay = Math.floor(anchor / 3);
-  const dx = canvas.w - w;
-  const dy = canvas.h - h;
-  return {
-    x: Math.round(canvas.x + (dx * ax) / 2),
-    y: Math.round(canvas.y + (dy * ay) / 2),
-    w,
-    h,
-  };
-}

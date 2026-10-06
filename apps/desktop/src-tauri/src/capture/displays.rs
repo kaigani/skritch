@@ -1,4 +1,4 @@
-//! Grabbing whole displays with xcap and persisting them as PNGs the overlays can load.
+//! Grabbing whole displays with xcap, and writing capture results as PNGs.
 
 use std::fs::File;
 use std::io::BufWriter;
@@ -20,13 +20,12 @@ pub struct MonitorBounds {
     pub height: u32,
 }
 
-/// One frozen display: pixels in memory (for cropping) plus the PNG on disk (for the overlay).
+/// One frozen display: its pixels, kept in memory for the overlay and for cropping.
 pub struct DisplayShot {
     pub monitor_id: u32,
     pub bounds: MonitorBounds,
     pub scale: f32,
     pub image: RgbaImage,
-    pub path: PathBuf,
 }
 
 /// Where shots and capture results live. Separate from `temp_write`'s directory, which is purged
@@ -49,30 +48,20 @@ pub fn stamp() -> u128 {
     SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_millis()
 }
 
-/// Captures every display. Grabs run sequentially (they are fast and xcap handles are not `Send`);
-/// the expensive PNG encodes run in parallel, one thread per display.
+/// Captures every display. The shots stay in memory: the overlay pulls raw pixels over IPC, so no
+/// image encoding sits between the grab and the selection UI.
 pub fn capture_all() -> AppResult<Vec<DisplayShot>> {
     let monitors = Monitor::all()?;
     if monitors.is_empty() {
         return Err(AppError::capture("no displays found"));
     }
-    let grabbed = monitors.iter().map(grab).collect::<AppResult<Vec<_>>>()?;
-    let dir = capture_dir()?;
-    let stamp = stamp();
-    std::thread::scope(|scope| {
-        let workers: Vec<_> = grabbed
-            .into_iter()
-            .enumerate()
-            .map(|(i, (monitor_id, bounds, scale, image))| {
-                let path = dir.join(format!("shot-{stamp}-{i}.png"));
-                scope.spawn(move || {
-                    write_png(&image, &path)?;
-                    Ok(DisplayShot { monitor_id, bounds, scale, image, path })
-                })
-            })
-            .collect();
-        workers.into_iter().map(|w| w.join().expect("PNG encoder thread panicked")).collect()
-    })
+    super::perf::mark("monitors enumerated");
+    let shots = monitors
+        .iter()
+        .map(|m| grab(m).map(|(monitor_id, bounds, scale, image)| DisplayShot { monitor_id, bounds, scale, image }))
+        .collect::<AppResult<Vec<_>>>()?;
+    super::perf::mark("displays grabbed");
+    Ok(shots)
 }
 
 /// The display containing the given point (xcap native coordinates), unsaved.

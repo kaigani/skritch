@@ -57,7 +57,8 @@ button {
 .topbar {
   height: 52px;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  /* equal side columns keep the capture button centred in the window */
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
   padding: 0 10px;
   background: var(--bar-top);
@@ -77,21 +78,16 @@ button {
 .topbar .center {
   min-width: 0;
   padding: 0 16px;
+  display: flex;
+  justify-content: center;
 }
-.topbar .title {
-  font-weight: 600;
-  font-size: 13px;
+.topbar .wordmark {
+  font-family: 'Nunito', 'Arial Rounded MT Bold', sans-serif;
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: 1.5px;
   color: #3a3a3a;
-  text-align: center;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
-}
-.topbar .title .dim {
-  font-size: 11px;
-  color: var(--muted);
-  font-weight: 500;
 }
 .pill {
   height: 26px;
@@ -358,6 +354,17 @@ button {
   color: #777;
   font-size: 11px;
   white-space: nowrap;
+}
+.video-summary {
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+  color: #555;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .bottombar .zoom {
   grid-column: 3;
@@ -707,6 +714,78 @@ input[type='number'] {
   gap: 8px;
   white-space: nowrap;
 }
+.cropbar .crop-actions {
+  display: flex;
+  gap: 6px;
+  margin-left: 8px;
+}
+.cropbar .crop-actions .pill {
+  gap: 5px;
+}
+.size-fields {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 8px;
+}
+.size-fields input[type='number'] {
+  width: 72px;
+  height: 26px;
+  text-align: center;
+  font: inherit;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  border: 1px solid #aaa;
+  border-radius: 4px;
+  background: #fff;
+}
+.size-fields .times {
+  color: var(--muted);
+  font-weight: 600;
+}
+/* Floating under the canvas while Crop › Scale is active. */
+.scale-slider {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%);
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: rgba(60, 60, 62, 0.82);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+  color: #fff;
+}
+.scale-slider .iconbtn {
+  width: 26px;
+  height: 26px;
+  border-radius: 5px;
+  background: linear-gradient(#77777a, #5c5c5f);
+  border: 1px solid #3c3c3e;
+  color: #fff;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1;
+}
+.scale-slider .iconbtn:hover:not(:disabled) {
+  filter: brightness(1.15);
+}
+.scale-slider .iconbtn:disabled {
+  opacity: 0.4;
+}
+.scale-slider input[type='range'] {
+  width: 220px;
+  accent-color: #d0d0d0;
+}
+.scale-slider .pct {
+  min-width: 42px;
+  text-align: right;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
 .segmented {
   display: inline-flex;
   border: 1px solid #b3b3b3;
@@ -727,22 +806,6 @@ input[type='number'] {
 .segmented button.on {
   background: linear-gradient(#6b6b6b, #8a8a8a);
   color: #fff;
-}
-.anchor {
-  display: grid;
-  grid-template-columns: repeat(3, 10px);
-  gap: 2px;
-}
-.anchor button {
-  width: 10px;
-  height: 10px;
-  padding: 0;
-  border: 1px solid #999;
-  border-radius: 2px;
-  background: #fff;
-}
-.anchor button.on {
-  background: #555;
 }
 
 /* ---------------------------------------------------------------- misc overlays */
@@ -1127,7 +1190,7 @@ button:focus-visible {
   .zoom input[type='range'] {
     width: 70px;
   }
-  .topbar .title .dim {
+  .doc-size {
     display: none;
   }
 }
@@ -1149,11 +1212,27 @@ button:focus-visible {
 }
 
 /* Filename is shared by Save, Copy as File, and the drag-out tab. */
-.filename {
+.doc-name {
   grid-column: 1;
   grid-row: 1;
   min-width: 0;
-  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.doc-name .edited {
+  flex: none;
+  color: var(--muted);
+  font-size: 11px;
+}
+.doc-size {
+  font-size: 11px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.filename {
+  min-width: 0;
+  flex: 0 1 auto;
   padding: 4px 6px;
   border: 1px solid transparent;
   border-radius: 4px;
@@ -1172,6 +1251,7 @@ button:focus-visible {
   border-color: #bbb;
 }
 .filename.editing {
+  flex: 1;
   background: #fff;
   border-color: var(--blue);
   outline: none;

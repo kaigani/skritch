@@ -241,20 +241,33 @@ export class Renderer {
     this.dirtyBackdrop = this.dirtyContent = this.dirtyInteraction = false;
   }
 
-  private ctx(c: HTMLCanvasElement, docSpace: boolean): CanvasRenderingContext2D {
+  /**
+   * View used to paint the document. While Crop › Scale is active the document previews at its
+   * scaled size, scaled about the canvas centre; editing tools are inactive then, so hit testing
+   * keeps using the real view.
+   */
+  private paintView(doc: Document): { zoom: number; ox: number; oy: number } {
+    const crop = ui().crop;
+    const s = crop?.mode === 'scale' && !crop.targetId ? crop.scalePct / 100 : 1;
+    if (s === 1) return { zoom: this.zoom, ox: this.ox, oy: this.oy };
+    const c = doc.canvas;
+    const cx = c.x + c.w / 2;
+    const cy = c.y + c.h / 2;
+    return {
+      zoom: this.zoom * s,
+      ox: this.ox + cx * (1 - s) * this.zoom,
+      oy: this.oy + cy * (1 - s) * this.zoom,
+    };
+  }
+
+  private ctx(c: HTMLCanvasElement, docSpace: boolean, doc?: Document | null): CanvasRenderingContext2D {
     const g = c.getContext('2d')!;
     g.setTransform(1, 0, 0, 1, 0, 0);
     g.clearRect(0, 0, c.width, c.height);
-    if (docSpace)
-      g.setTransform(
-        this.dpr * this.zoom,
-        0,
-        0,
-        this.dpr * this.zoom,
-        this.dpr * this.ox,
-        this.dpr * this.oy,
-      );
-    else g.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    if (docSpace) {
+      const v = doc ? this.paintView(doc) : this;
+      g.setTransform(this.dpr * v.zoom, 0, 0, this.dpr * v.zoom, this.dpr * v.ox, this.dpr * v.oy);
+    } else g.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
     return g;
   }
 
@@ -269,7 +282,9 @@ export class Renderer {
     g.fillStyle = BACKDROP;
     g.fillRect(0, 0, this.cssW, this.cssH);
     if (!doc) return;
-    const r = this.screenRect(this.shownCanvas(doc));
+    const v = this.paintView(doc);
+    const shown = this.shownCanvas(doc);
+    const r = { x: shown.x * v.zoom + v.ox, y: shown.y * v.zoom + v.oy, w: shown.w * v.zoom, h: shown.h * v.zoom };
     g.save();
     g.shadowColor = 'rgba(0,0,0,0.35)';
     g.shadowBlur = 18;
@@ -285,7 +300,7 @@ export class Renderer {
   }
 
   private drawContent(doc: Document | null): void {
-    const g = this.ctx(this.content, true);
+    const g = this.ctx(this.content, true, doc);
     if (!doc) return;
     const cropping = !!ui().crop && !ui().crop!.targetId && ui().crop!.mode !== 'scale';
     const shown = this.shownCanvas(doc);

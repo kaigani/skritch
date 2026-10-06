@@ -151,18 +151,20 @@ const mock: Backend = {
   openScreenRecordingSettings: async () => {},
   async overlayInfo() {
     const scale = window.devicePixelRatio || 1;
-    const width = Math.round(window.innerWidth * scale);
-    const height = Math.round(window.innerHeight * scale);
-    const png = await canvasToPng(fakeScreenshot(width, height, 1));
     return {
-      shotPath: putFile('shot.png', new Blob([png], { type: 'image/png' })),
-      width,
-      height,
+      session: 1,
+      width: Math.round(window.innerWidth * scale),
+      height: Math.round(window.innerHeight * scale),
       scale,
       windows: [{ x: 120 * scale, y: 90 * scale, w: 600 * scale, h: 400 * scale, title: 'Mock window' }],
       mode: (new URLSearchParams(location.search).get('mode') as any) ?? 'crosshair',
     };
   },
+  async overlayShot() {
+    const scale = window.devicePixelRatio || 1;
+    return fakeScreenshot(Math.round(window.innerWidth * scale), Math.round(window.innerHeight * scale), 1);
+  },
+  async overlayReady() {},
   async overlayFinish(_d, rect, timed) {
     console.info('[mock] overlay finish', rect, timed);
   },

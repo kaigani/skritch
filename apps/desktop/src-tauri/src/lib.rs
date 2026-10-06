@@ -39,6 +39,7 @@ pub fn run() {
             menu::create(app.handle())?;
             tray::create(app.handle())?;
             hotkeys::register(app.handle());
+            capture::region::prewarm(app.handle());
             // Probe ffmpeg encoders in the background so the first export does not pay for it.
             std::thread::spawn(video::encoders);
             Ok(())
@@ -66,6 +67,8 @@ pub fn run() {
             clipboard::clipboard_write_text,
             capture::capture_start,
             capture::capture_overlay_info,
+            capture::capture_overlay_pixels,
+            capture::capture_overlay_ready,
             capture::capture_overlay_finish,
             capture::capture_last,
             capture::permissions::capture_permission_status,
@@ -89,6 +92,7 @@ pub fn run() {
             video::render::video_cancel,
             windows::dropzone::tray_set_dropzone_visible,
             windows::show_main_window,
+            windows::dragout::drag_out,
         ])
         .build(tauri::generate_context!())
         .expect("error while building Skritch");

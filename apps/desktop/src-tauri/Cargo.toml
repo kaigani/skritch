@@ -1,6 +1,6 @@
 [package]
 name = "skritch"
-version = "0.1.0"
+version = "0.2.0"
 description = "Skritch — screenshot, markup and video trim"
 authors = ["Skritch"]
 license = "MIT"
@@ -21,6 +21,7 @@ tauri-plugin-global-shortcut = "2"
 tauri-plugin-dialog = "2"
 tauri-plugin-store = "2"
 tauri-plugin-drag = "2"
+drag = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 xcap = "0.9"
@@ -39,7 +40,7 @@ objc2-app-kit = { version = "0.3", default-features = false, features = [
 
 [target.'cfg(windows)'.dependencies]
 clipboard-win = "5"
-windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Graphics_Dwm"] }
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Graphics_Dwm", "Win32_UI_WindowsAndMessaging"] }
 
 [profile.release]
 codegen-units = 1
@@ -47,3 +48,9 @@ lto = true
 opt-level = "s"
 panic = "abort"
 strip = true
+
+# Dependencies (image/PNG, xcap, ...) are compiled with optimisations even in dev builds: an
+# unoptimised PNG encode of a Retina screenshot takes several seconds and made `pnpm tauri dev`
+# capture latency unrepresentative. Our own crate stays at opt-level 0 for fast rebuilds.
+[profile.dev.package."*"]
+opt-level = 3

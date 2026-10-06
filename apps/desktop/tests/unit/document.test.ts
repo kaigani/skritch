@@ -14,7 +14,6 @@ import {
   scaleDocument,
   setCanvas,
 } from '../../src/model/commands/document';
-import { anchoredRect } from '../../src/model/geometry';
 import type { Document, ShapeObject, SkObject } from '../../src/model/types';
 import { hitObject, objectBounds, translated } from '../../src/model/objects';
 
@@ -116,13 +115,6 @@ describe('document commands', () => {
     const occluded = placeNewImage(canvas, { x: 200, y: 150 }, 100, 100, [{ x: 160, y: 110, w: 10, h: 10 }]);
     expect(occluded).toEqual({ x: 174, y: 124 });
     expect(placeNewImage(canvas, { x: 200, y: 150 }, 500, 100, [])).toEqual({ x: 0, y: 0 });
-  });
-
-  it('anchors canvas resize on a 3x3 grid', () => {
-    const c = { x: 0, y: 0, w: 100, h: 100 };
-    expect(anchoredRect(c, 200, 200, 0)).toEqual({ x: 0, y: 0, w: 200, h: 200 });
-    expect(anchoredRect(c, 200, 200, 4)).toEqual({ x: -50, y: -50, w: 200, h: 200 });
-    expect(anchoredRect(c, 200, 200, 8)).toEqual({ x: -100, y: -100, w: 200, h: 200 });
   });
 });
 

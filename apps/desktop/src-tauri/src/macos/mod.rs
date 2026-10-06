@@ -29,11 +29,23 @@ extern "C" {
     fn CGRequestScreenCaptureAccess() -> bool;
     fn CGEventCreate(source: *const c_void) -> *mut c_void;
     fn CGEventGetLocation(event: *const c_void) -> CGPoint;
+    fn CGWindowListCreateDescriptionFromArray(window_ids: *const c_void) -> *const c_void;
+    static kCGWindowIsOnscreen: *const c_void;
 }
 
 #[link(name = "CoreFoundation", kind = "framework")]
 extern "C" {
     fn CFRelease(cf: *const c_void);
+    fn CFArrayCreate(
+        allocator: *const c_void,
+        values: *const *const c_void,
+        count: isize,
+        callbacks: *const c_void,
+    ) -> *const c_void;
+    fn CFArrayGetCount(array: *const c_void) -> isize;
+    fn CFArrayGetValueAtIndex(array: *const c_void, index: isize) -> *const c_void;
+    fn CFDictionaryGetValue(dict: *const c_void, key: *const c_void) -> *const c_void;
+    fn CFBooleanGetValue(boolean: *const c_void) -> u8;
 }
 
 pub fn screen_capture_permission() -> &'static str {
@@ -61,6 +73,37 @@ pub fn cursor_location() -> Option<(f64, f64)> {
         let p = CGEventGetLocation(event);
         CFRelease(event);
         Some((p.x, p.y))
+    }
+}
+
+/// Whether the compositor still lists any of these windows (by WindowServer id) as on screen.
+/// Asks WindowServer about just our own ids, which is far cheaper than enumerating every window.
+/// `None` if the query itself failed.
+pub fn any_onscreen(ids: &[u32]) -> Option<bool> {
+    // The array holds the raw CGWindowID values themselves (no retain/release callbacks).
+    let values: Vec<*const c_void> = ids.iter().map(|&id| id as usize as *const c_void).collect();
+    // SAFETY: plain CoreFoundation/CoreGraphics calls on arrays we create and release here; the
+    // dictionaries returned by `CFArrayGetValueAtIndex` are borrowed from `descriptions`.
+    unsafe {
+        let array = CFArrayCreate(std::ptr::null(), values.as_ptr(), values.len() as isize, std::ptr::null());
+        if array.is_null() {
+            return None;
+        }
+        let descriptions = CGWindowListCreateDescriptionFromArray(array);
+        CFRelease(array);
+        if descriptions.is_null() {
+            return None;
+        }
+        let mut onscreen = false;
+        for i in 0..CFArrayGetCount(descriptions) {
+            let dict = CFArrayGetValueAtIndex(descriptions, i);
+            let flag = CFDictionaryGetValue(dict, kCGWindowIsOnscreen);
+            if !flag.is_null() && CFBooleanGetValue(flag) != 0 {
+                onscreen = true;
+            }
+        }
+        CFRelease(descriptions);
+        Some(onscreen)
     }
 }
 
@@ -95,6 +138,8 @@ pub fn raise_overlay(window: &tauri::WebviewWindow) {
     // SAFETY: Tauri returns the live NSWindow backing this webview window; we are on the main thread
     // (overlays are configured from `run_on_main_thread`).
     let ns_window = unsafe { &*(ptr as *const NSWindow) };
+    // Overlays are kept alive and hidden/shown for every capture; neither may fade.
+    ns_window.setAnimationBehavior(NSWindowAnimationBehavior::None);
     ns_window.setLevel(NSScreenSaverWindowLevel);
     ns_window.setCollectionBehavior(
         NSWindowCollectionBehavior::CanJoinAllSpaces | NSWindowCollectionBehavior::FullScreenAuxiliary,

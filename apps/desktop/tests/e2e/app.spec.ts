@@ -3,7 +3,8 @@ import { expect, test, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-const title = (page: Page) => page.getByTestId('title');
+/** Canvas size shown in the bottom bar next to the zoom. */
+const size = (page: Page) => page.getByTestId('doc-size');
 
 async function fresh(page: Page) {
   await page.goto('/');
@@ -14,15 +15,15 @@ async function fresh(page: Page) {
   await page.waitForSelector('.app');
 }
 
-/** Snaps via the main button and waits until the (async) capture has arrived: dialog shown or title changed. */
+/** Snaps via the main button and waits until the (async) capture has arrived: dialog shown or size changed. */
 async function snap(page: Page) {
-  const before = (await title(page).count()) ? await title(page).innerText() : '';
+  const before = (await size(page).count()) ? await size(page).innerText() : '';
   await page.locator('.capture-button').click();
   await expect
     .poll(
       async () =>
         (await page.getByRole('dialog').count()) > 0 ||
-        ((await title(page).count()) > 0 && (await title(page).innerText()) !== before),
+        ((await size(page).count()) > 0 && (await size(page).innerText()) !== before),
     )
     .toBe(true);
 }
@@ -43,29 +44,38 @@ async function drag(page: Page, x0: number, y0: number, x1: number, y1: number) 
 test('capture opens a document at image size', async ({ page }) => {
   await fresh(page);
   await snap(page);
-  await expect(title(page)).toContainText('800 × 520');
+  await expect(size(page)).toContainText('800 × 520');
   await expect(page.getByTestId('zoom-pct')).toHaveText('100%');
 });
 
-test('arrival dialog: Esc cancels, Replace replaces, Add to Canvas adds a selected layer', async ({
+test('arrival dialog: Esc cancels, Replace (default) replaces, Add to Canvas adds a selected layer', async ({
   page,
 }) => {
   await fresh(page);
   await snap(page);
-  await expect(title(page)).toContainText('800 × 520');
+  await expect(size(page)).toContainText('800 × 520');
 
   await snap(page);
   await expect(page.getByRole('dialog')).toContainText('New capture ready');
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog')).toHaveCount(0);
-  await expect(title(page)).toContainText('800 × 520');
+  await expect(size(page)).toContainText('800 × 520');
 
   await snap(page);
   await page.getByRole('button', { name: 'Replace', exact: true }).click();
-  await expect(title(page)).not.toContainText('800 × 520'); // capture #2 has a different size
+  await expect(size(page)).not.toContainText('800 × 520'); // capture #2 has a different size
+
+  await expect(page.getByRole('dialog')).toHaveCount(0); // no "Save changes?" after Replace
+
+  const replaced = await size(page).innerText();
+  await snap(page);
+  await expect(page.getByRole('dialog').getByRole('button')).toHaveText(['Cancel', 'Add to Canvas', 'Replace']);
+  await page.keyboard.press('Enter'); // default = Replace
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(size(page)).not.toHaveText(replaced);
 
   await snap(page);
-  await page.keyboard.press('Enter'); // default = Add to Canvas
+  await page.getByRole('button', { name: 'Add to Canvas' }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(page.locator('[data-tool=select]')).toHaveAttribute('aria-pressed', 'true');
 });
@@ -90,11 +100,11 @@ test('dragging an object past the edge grows the canvas; one undo restores it (�
   await page.keyboard.press('v');
   await page.mouse.click(o.x + 20, o.y + 20); // deselect, so the edge isn't a resize handle
   await drag(page, o.x + 650, o.y + 100, o.x + 950, o.y + 100); // grab its top edge, drag right
-  await expect(title(page)).not.toContainText('800 × 520');
-  const grown = await title(page).innerText();
+  await expect(size(page)).not.toContainText('800 × 520');
+  const grown = await size(page).innerText();
   expect(Number(/(\d+) × 520/.exec(grown)?.[1])).toBeGreaterThan(1000);
   await page.keyboard.press('Control+z');
-  await expect(title(page)).toContainText('800 × 520');
+  await expect(size(page)).toContainText('800 × 520');
 });
 
 test('crop handle pulled outward grows the canvas (§5.3)', async ({ page }) => {
@@ -107,19 +117,19 @@ test('crop handle pulled outward grows the canvas (§5.3)', async ({ page }) => 
   await expect(page.getByLabel('Width')).toHaveValue('900');
   await expect(page.getByLabel('Height')).toHaveValue('600');
   await page.keyboard.press('Enter');
-  await expect(title(page)).toContainText('900 × 600');
+  await expect(size(page)).toContainText('900 × 600');
   await page.keyboard.press('Control+z');
-  await expect(title(page)).toContainText('800 × 520');
+  await expect(size(page)).toContainText('800 × 520');
 });
 
-test('Canvas sub-mode resizes numerically with an anchor', async ({ page }) => {
+test('typing a larger crop width grows the canvas', async ({ page }) => {
   await fresh(page);
   await snap(page);
   await page.keyboard.press('c');
-  await page.getByRole('tab', { name: 'Canvas' }).click();
+  await expect(page.getByRole('tab')).toHaveText(['Crop', 'Scale']);
   await page.getByLabel('Width').fill('1000');
   await page.getByRole('button', { name: 'Apply' }).click();
-  await expect(title(page)).toContainText('1000 × 520');
+  await expect(size(page)).toContainText('1000 × 520');
 });
 
 test('Scale sub-mode resamples the whole document', async ({ page }) => {
@@ -127,9 +137,28 @@ test('Scale sub-mode resamples the whole document', async ({ page }) => {
   await snap(page);
   await page.keyboard.press('c');
   await page.getByRole('tab', { name: 'Scale' }).click();
-  await page.getByLabel('Scale percent').fill('50');
+  await expect(page.getByRole('button', { name: /Cancel/ })).toBeVisible();
+  for (let i = 0; i < 5; i++) await page.getByRole('button', { name: 'Scale down' }).click();
+  await expect(page.getByLabel('Width')).toHaveValue('400');
+  await expect(page.getByLabel('Height')).toHaveValue('260');
+  await page.getByLabel('Height').fill('130');
+  await expect(page.getByLabel('Width')).toHaveValue('200');
+  await expect(page.getByRole('group', { name: 'Scale' })).toContainText('25%');
   await page.getByRole('button', { name: 'Apply' }).click();
-  await expect(title(page)).toContainText('400 × 260');
+  await expect(size(page)).toContainText('200 × 130');
+  await expect(page.getByRole('group', { name: 'Scale' })).toHaveCount(0);
+});
+
+test('Drag Me hint shows on a real press only, not on a stray click event', async ({ page }) => {
+  await fresh(page);
+  await snap(page);
+  const tab = page.getByRole('button', { name: 'Drag me to share' });
+  // WebKit can deliver a click with no matching press after a native drag ends.
+  await tab.dispatchEvent('click');
+  await page.waitForTimeout(200);
+  await expect(page.getByRole('status')).not.toContainText('Drag this tab');
+  await tab.click();
+  await expect(page.getByRole('status')).toContainText('Drag this tab');
 });
 
 test('text tool: type, commit, undo', async ({ page }) => {
@@ -142,7 +171,7 @@ test('text tool: type, commit, undo', async ({ page }) => {
   await page.keyboard.type('Hello');
   await page.keyboard.press('Escape');
   await expect(page.locator('textarea.text-editor')).toHaveCount(0);
-  await expect(title(page)).toContainText('Edited');
+  await expect(page.getByTestId('doc-name')).toContainText('Edited');
 });
 
 test('exported PNG round-trips the editable document (iTXt)', async ({ page }) => {
@@ -193,7 +222,7 @@ test('video: import, append, step, mark, delete, undo, frame → image and back'
   await expect(page.getByTestId('frame-counter')).toHaveText('frame 0 / 90');
   await dropClip(page, 'clipB');
   await expect(page.getByTestId('frame-counter')).toHaveText('frame 0 / 150');
-  await expect(title(page)).toContainText('2 clips');
+  await expect(page.getByTestId('video-summary')).toContainText('2 clips');
 
   await page.keyboard.press('ArrowRight');
   await page.keyboard.press('Shift+ArrowRight');
@@ -217,7 +246,7 @@ test('video: import, append, step, mark, delete, undo, frame → image and back'
 
   await page.keyboard.press('Control+Enter');
   await expect(page.getByRole('button', { name: /Back to Video/ })).toBeVisible();
-  await expect(title(page)).toContainText('640 × 360');
+  await expect(size(page)).toContainText('640 × 360');
   await page.getByRole('button', { name: /Back to Video/ }).click();
   await expect(page.getByTestId('frame-counter')).toContainText('/ 161');
 });

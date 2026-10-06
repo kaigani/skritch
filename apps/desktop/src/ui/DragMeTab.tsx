@@ -36,6 +36,8 @@ export function DragMeTab({ disabled }: { disabled: boolean }) {
     file: Promise<[string | null, string] | null>;
   } | null>(null);
   const browserUrl = useRef<{ url: string; name: string; mime: string } | null>(null);
+  /** A press on this tab that has not turned into a drag: releasing it shows the "drag me" hint. */
+  const pressed = useRef(false);
   const generation = useRef({ value: 0 }).current;
 
   useEffect(() => {
@@ -56,6 +58,7 @@ export function DragMeTab({ disabled }: { disabled: boolean }) {
 
   const onPointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
     if (disabled || e.button !== 0) return;
+    pressed.current = true;
     // Commit a filename still being edited before taking the export snapshot.
     if (document.activeElement instanceof HTMLInputElement) document.activeElement.blur();
     if (!isTauri) return;
@@ -76,6 +79,7 @@ export function DragMeTab({ disabled }: { disabled: boolean }) {
     if (!s || s.moving || Math.hypot(e.clientX - s.x, e.clientY - s.y) < 4) return;
     const target = e.currentTarget;
     s.moving = true;
+    pressed.current = false;
     setPreparing(true);
     try {
       const prepared = await s.file;
@@ -129,13 +133,22 @@ export function DragMeTab({ disabled }: { disabled: boolean }) {
       draggable={!isTauri && !disabled}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
-      onPointerUp={() => (start.current = null)}
-      onPointerCancel={() => (start.current = null)}
+      // Not onClick: after a native drag WebKit can deliver a stale click here when the user next
+      // clicks in the window, which showed this hint while they were choosing a tool.
+      onPointerUp={() => {
+        start.current = null;
+        if (pressed.current) ui().toast('Drag this tab to Finder, the Desktop, or another app to save a file.');
+        pressed.current = false;
+      }}
+      onPointerCancel={() => {
+        start.current = null;
+        pressed.current = false;
+      }}
       onLostPointerCapture={() => (start.current = null)}
-      onClick={() => ui().toast('Drag this tab to Finder, the Desktop, or another app to save a file.')}
       onPointerEnter={onPointerEnter}
       onDragStart={(e) => {
         const b = browserUrl.current;
+        pressed.current = false;
         if (!b) return e.preventDefault();
         // Chromium's preview-only DownloadURL protocol reserves colons as delimiters.
         e.dataTransfer.setData('DownloadURL', `${b.mime}:${b.name.replace(/:/g, '_')}:${b.url}`);

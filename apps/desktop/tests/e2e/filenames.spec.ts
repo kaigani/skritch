@@ -25,7 +25,7 @@ test('capture names are stable, editable, cancelable, and shared by Save and Dra
   await input.fill('Final markup.png');
   await input.press('Enter');
   await expect(filename).toHaveText('Final markup');
-  await expect(page.getByTestId('title')).toContainText('Final markup');
+  await expect(page.getByTestId('doc-name')).toContainText('Final markup');
   await page.getByRole('button', { name: /Share/ }).click();
   const firstDownload = page.waitForEvent('download');
   await page.getByRole('menuitem', { name: /^Save As/ }).click();

@@ -129,8 +129,8 @@ export async function arriveImages(imgs: IncomingImage[]): Promise<void> {
   if (choice === 'ask') choice = await askArrival('image', imgs.length);
   if (choice === 'cancel') return;
   if (choice === 'add') return addToCanvas(imgs);
-  // 'newWindow' opens in this window in v1 (see DECISIONS.md)
-  if (!(await confirmDiscard())) return;
+  // 'newWindow' opens in this window in v1 (see DECISIONS.md). Choosing Replace is the user's
+  // decision to drop the current image, so it does not ask "Save changes?" again.
   return replaceWith(imgs[0]);
 }
 

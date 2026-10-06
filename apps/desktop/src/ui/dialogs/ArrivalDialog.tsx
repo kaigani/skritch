@@ -6,8 +6,8 @@ import { Icon } from '../icons';
 type Choice = 'cancel' | 'replace' | 'add';
 
 /**
- * §5.1 "New capture ready" sheet: Cancel / Replace / Add to Canvas (default), with "Remember my choice".
- * Keyboard: Esc = Cancel, Enter = Add, R = Replace, A = Add. For videos, Add is disabled.
+ * §5.1 "New capture ready" sheet: Cancel / Add to Canvas / Replace (default), with "Remember my choice".
+ * Keyboard: Esc = Cancel, Enter = Replace, R = Replace, A = Add. For videos, Add is disabled.
  */
 export function ArrivalDialog() {
   const arrival = useUi((s) => s.arrival);
@@ -30,7 +30,7 @@ export function ArrivalDialog() {
     const key = (e: KeyboardEvent) => {
       const k = e.key.toLowerCase();
       if (k === 'escape') choose('cancel');
-      else if (k === 'enter') choose(isVideo ? 'replace' : 'add');
+      else if (k === 'enter') choose('replace');
       else if (k === 'r') choose('replace');
       else if (k === 'a' && !isVideo) choose('add');
       else return;
@@ -69,16 +69,20 @@ export function ArrivalDialog() {
           <button className="pill" onClick={() => choose('cancel')}>
             Cancel
           </button>
-          <button className={`pill ${isVideo ? 'primary' : ''}`} onClick={() => choose('replace')}>
-            {isVideo ? 'Replace (open video)' : 'Replace'}
-          </button>
           <button
-            className={`pill ${isVideo ? '' : 'primary'}`}
+            className="pill"
             disabled={isVideo}
-            title={isVideo ? 'Videos open in Video mode' : 'Add as a movable layer (Enter)'}
+            title={isVideo ? 'Videos open in Video mode' : 'Add as a movable layer (A)'}
             onClick={() => choose('add')}
           >
             Add to Canvas
+          </button>
+          <button
+            className="pill primary"
+            title="Replace the current image (Enter)"
+            onClick={() => choose('replace')}
+          >
+            {isVideo ? 'Replace (open video)' : 'Replace'}
           </button>
         </div>
       </div>

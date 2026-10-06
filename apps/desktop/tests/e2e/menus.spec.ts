@@ -13,7 +13,7 @@ test('Image menu reorders selected layers one step or to either end, with undo a
   );
   await page.reload();
   await page.locator('.capture-button').click();
-  await expect(page.getByTestId('title')).toContainText('800 × 520');
+  await expect(page.getByTestId('doc-size')).toContainText('800 × 520');
   await page.evaluate(() => {
     const d = (window as any).__skritch.docState();
     d.execute({
@@ -64,7 +64,7 @@ test('native menu actions edit, copy/paste layers, transform, clear annotations,
   );
   await page.reload();
   await page.locator('.capture-button').click();
-  await expect(page.getByTestId('title')).toContainText('800 × 520');
+  await expect(page.getByTestId('doc-size')).toContainText('800 × 520');
   await page.waitForFunction(() => !!(window as any).__skritch);
   await menu(page, 'select-all');
   await expect.poll(() => page.evaluate(() => (window as any).__skritch.docState().selection.length)).toBe(1);
@@ -90,9 +90,9 @@ test('native menu actions edit, copy/paste layers, transform, clear annotations,
   await page.getByRole('button', { name: 'Cancel', exact: true }).click();
   await page.evaluate(() => (window as any).__skritch.docState().select([]));
   await menu(page, 'rotate-cw');
-  await expect(page.getByTestId('title')).toContainText('520 × 800');
+  await expect(page.getByTestId('doc-size')).toContainText('520 × 800');
   await menu(page, 'undo');
-  await expect(page.getByTestId('title')).toContainText('800 × 520');
+  await expect(page.getByTestId('doc-size')).toContainText('800 × 520');
   await page.evaluate(() => {
     const d = (window as any).__skritch.docState();
     d.execute({

@@ -1,11 +1,8 @@
 import { useRef } from 'react';
 import { copyAsFile, copyImage, save, saveAs, saveProject } from '../actions/image';
 import { backToVideo, exportFramePng, saveVideoProject } from '../actions/video';
-import { seqLength } from '../model/edl';
-import { formatTimecode } from '../model/timecode';
-import { isDirty, useDoc } from '../state/document';
+import { useDoc } from '../state/document';
 import { useUi } from '../state/ui';
-import { useVideo } from '../state/video';
 import { IMAGE_FORMATS } from '../export/formats';
 import { CropBar } from './CropBar';
 import { CaptureButton } from './CaptureButton';
@@ -29,16 +26,18 @@ export function TopBar() {
 
   return (
     <header className="topbar" data-tauri-drag-region>
-      <div className="left">
+      <div className="left" data-tauri-drag-region>
+        <span className="wordmark" data-tauri-drag-region>
+          SKRITCH
+        </span>
         {frameEdit && (
           <button className="pill" onClick={() => void backToVideo()} title="Back to Video (Esc)">
             <Icon.back /> Back to Video
           </button>
         )}
-        <CaptureButton />
       </div>
       <div className="center" data-tauri-drag-region>
-        {cropping && mode === 'image' ? <CropBar /> : <Title />}
+        {cropping && mode === 'image' ? <CropBar /> : <CaptureButton />}
       </div>
       <div className="right">
         <button
@@ -97,38 +96,5 @@ export function TopBar() {
         </Popover>
       )}
     </header>
-  );
-}
-
-function Title() {
-  const mode = useUi((s) => s.mode);
-  const title = useDoc((s) => s.doc?.meta.title);
-  const dirty = useDoc(isDirty);
-  const size = useDoc((s) => (s.doc ? `${s.doc.canvas.w} × ${s.doc.canvas.h}` : ''));
-  const project = useVideo((s) => s.project);
-  if (mode === 'video' && project) {
-    const n = project.sequence.length;
-    const len = seqLength(project.sequence);
-    return (
-      <div className="title" data-tauri-drag-region data-testid="title">
-        Untitled Video{' '}
-        <span className="dim">
-          — {n} clip{n === 1 ? '' : 's'} · {formatTimecode(len, project.output.fps)} ·{' '}
-          {Math.round(project.output.fps * 100) / 100} fps
-        </span>
-      </div>
-    );
-  }
-  if (mode === 'empty')
-    return (
-      <div className="title" data-tauri-drag-region>
-        Skritch
-      </div>
-    );
-  return (
-    <div className="title" data-tauri-drag-region data-testid="title">
-      {title}
-      {dirty ? ' — Edited' : ''} <span className="dim">· {size}</span>
-    </div>
   );
 }

@@ -6,12 +6,13 @@
 //! `capture://result`, `capture://cancelled` or `capture://error`, which also clears `busy`.
 
 pub mod displays;
+pub mod perf;
 pub mod permissions;
 pub mod region;
 pub mod timed;
 pub mod window;
 
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
@@ -65,7 +66,8 @@ pub struct CaptureResult {
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct OverlayInfo {
-    shot_path: String,
+    /// Identifies the capture this overlay belongs to (overlay pages are reused between captures).
+    session: u64,
     width: u32,
     height: u32,
     scale: f32,
@@ -74,6 +76,7 @@ pub struct OverlayInfo {
 }
 
 struct Session {
+    id: u64,
     kind: CaptureKind,
     shots: Vec<DisplayShot>,
     windows: Vec<Vec<WindowRect>>,
@@ -91,6 +94,7 @@ struct PreviousArea {
 #[derive(Default)]
 pub struct CaptureState {
     busy: AtomicBool,
+    next_session: AtomicU64,
     target: Mutex<String>,
     previous: Mutex<Option<PreviousArea>>,
     session: Mutex<Option<Session>>,
@@ -115,6 +119,7 @@ pub fn start(app: &AppHandle, kind: CaptureKind) -> AppResult<()> {
     if app.state::<CaptureState>().busy.swap(true, Ordering::SeqCst) {
         return Err(AppError::new("busy", "a capture is already in progress"));
     }
+    perf::begin();
     *app.state::<CaptureState>().target.lock().unwrap() = windows::active_document(app);
     let app = app.clone();
     std::thread::spawn(move || {
@@ -128,12 +133,16 @@ pub fn start(app: &AppHandle, kind: CaptureKind) -> AppResult<()> {
 fn begin(app: &AppHandle, kind: CaptureKind) -> AppResult<()> {
     // Without Screen Recording access macOS returns only the wallpaper and our own windows. The
     // frontend shows an explainer with an "Open System Settings" button for this error code.
+    perf::mark("worker started");
     #[cfg(target_os = "macos")]
     if !crate::macos::ensure_screen_capture_access() {
         return Err(AppError::new("permission", "Skritch needs Screen Recording permission to capture the screen"));
     }
+    perf::mark("access checked");
     displays::purge_old(RECOVER_FOR + Duration::from_secs(60));
+    perf::mark("purge_old done");
     hide_own_windows(app)?;
+    perf::mark("own windows hidden + settled");
 
     if kind == CaptureKind::Previous {
         let previous = app
@@ -179,13 +188,28 @@ fn begin(app: &AppHandle, kind: CaptureKind) -> AppResult<()> {
         return Ok(());
     }
 
+    // Window enumeration (titles, rects) is slow and independent of the grab: overlap them.
+    let enumerate = std::thread::spawn(window::global_candidates);
+    // Make sure the overlay pages exist (normally pre-warmed already) while the displays are grabbed.
+    let ensure = {
+        let app = app.clone();
+        std::thread::spawn(move || region::ensure_overlays(&app))
+    };
     let captured_at = displays::stamp() as u64;
     let shots = displays::capture_all()?;
-    let windows = window::candidates(&shots);
+    let global = enumerate.join().unwrap_or_default();
+    perf::mark("window candidates ready");
+    let _ = ensure.join();
+    region::ensure_overlays_for(app, shots.len())?;
+    perf::mark("overlay windows ready");
+    let windows: Vec<_> =
+        shots.iter().map(|s| window::for_display(&global, &s.bounds, s.image.width(), s.image.height())).collect();
     let bounds: Vec<_> = shots.iter().map(|s| s.bounds).collect();
-    // Stored before the overlays exist: they ask for it as soon as their page loads.
-    *app.state::<CaptureState>().session.lock().unwrap() = Some(Session { kind, shots, windows, captured_at });
-    region::open_overlays(app, &bounds, kind.overlay_mode())
+    let state = app.state::<CaptureState>();
+    let id = state.next_session.fetch_add(1, Ordering::SeqCst) + 1;
+    // Stored before the overlays are armed: they ask for it as soon as they hear about it.
+    *state.session.lock().unwrap() = Some(Session { id, kind, shots, windows, captured_at });
+    region::arm(app, &bounds, id)
 }
 
 /// Cursor position in the coordinate space `xcap::Monitor::from_point` expects: physical pixels on
@@ -211,13 +235,44 @@ pub fn capture_overlay_info(state: State<'_, CaptureState>, display: u32) -> App
     let session = session.as_ref().ok_or_else(no_session)?;
     let shot = session.shots.get(display as usize).ok_or_else(|| bad_display(display))?;
     Ok(OverlayInfo {
-        shot_path: shot.path.to_string_lossy().into_owned(),
+        session: session.id,
         width: shot.image.width(),
         height: shot.image.height(),
         scale: shot.scale,
         windows: session.windows[display as usize].clone(),
         mode: session.kind.overlay_mode(),
     })
+}
+
+/// The frozen display as `[width: u32 LE][height: u32 LE]` followed by raw RGBA8 rows (no encoding):
+/// the overlay turns it into an `ImageBitmap` without an image decode, which is far cheaper than
+/// a PNG round trip.
+#[tauri::command]
+pub fn capture_overlay_pixels(state: State<'_, CaptureState>, display: u32) -> AppResult<tauri::ipc::Response> {
+    let session = state.session.lock().unwrap();
+    let session = session.as_ref().ok_or_else(no_session)?;
+    let shot = session.shots.get(display as usize).ok_or_else(|| bad_display(display))?;
+    let pixels = shot.image.as_raw();
+    let mut body = Vec::with_capacity(8 + pixels.len());
+    body.extend_from_slice(&shot.image.width().to_le_bytes());
+    body.extend_from_slice(&shot.image.height().to_le_bytes());
+    body.extend_from_slice(pixels);
+    Ok(tauri::ipc::Response::new(body))
+}
+
+/// The overlay has drawn the frozen shot: now it can appear without a flash of stale or blank content.
+#[tauri::command]
+pub fn capture_overlay_ready(app: AppHandle, display: u32, session: u64) {
+    perf::mark(&format!("overlay {display} ready (drawn)"));
+    let bounds = {
+        let state = app.state::<CaptureState>();
+        let guard = state.session.lock().unwrap();
+        guard.as_ref().filter(|s| s.id == session).and_then(|s| s.shots.get(display as usize)).map(|s| s.bounds)
+    };
+    if let Some(bounds) = bounds {
+        region::show(&app, display as usize, &bounds);
+        perf::mark(&format!("overlay {display} shown"));
+    }
 }
 
 /// `rect: None` cancels. `timed` closes the overlays, counts down, then re-grabs that display.
@@ -238,7 +293,7 @@ pub fn capture_overlay_finish(app: AppHandle, display: u32, rect: Option<Rect>, 
         .windows
         .get(display as usize)
         .and_then(|windows| window::title_for_rect(windows, rect, session.kind == CaptureKind::Window));
-    region::close_overlays(&app);
+    region::release_overlays(&app);
     // Cropping and encoding take tens of ms on a 4K shot; keep them off the main thread.
     std::thread::spawn(move || {
         let mut captured_at = session.captured_at;
@@ -327,14 +382,19 @@ fn hide_own_windows(app: &AppHandle) -> AppResult<()> {
         })();
         let _ = tx.send(result);
     })?;
+    perf::mark("hide dispatched");
     // This function only runs on the capture worker, never on AppKit's main thread.
     let ids = rx.recv().map_err(|_| AppError::capture("Could not hide Skritch before capture"))??;
+    perf::mark("hidden on main thread");
     if ids.is_empty() {
         return Ok(());
     }
     wait_for_hidden_windows(|| {
-        // On macOS xcap enumerates CGWindowList OptionOnScreenOnly, so this checks the compositor
-        // rather than merely trusting the application's local isVisible flag.
+        // Ask WindowServer (not our own isVisible flag) whether our windows are still on screen.
+        if let Some(visible) = crate::macos::any_onscreen(&ids) {
+            return Ok(visible);
+        }
+        // Query failed: fall back to enumerating every on-screen window.
         Ok(xcap::Window::all()?.iter().any(|w| w.id().is_ok_and(|id| ids.contains(&id))))
     })
 }
@@ -346,8 +406,8 @@ fn wait_for_hidden_windows(mut visible: impl FnMut() -> AppResult<bool>) -> AppR
     wait_for_hidden_windows_with(
         &mut visible,
         Duration::from_secs(2),
-        Duration::from_millis(120),
-        Duration::from_millis(16),
+        Duration::from_millis(50),
+        Duration::from_millis(8),
     )
 }
 
@@ -377,7 +437,7 @@ fn wait_for_hidden_windows_with(
 /// to the front even if it was hidden before the capture.
 fn end_session(app: &AppHandle, show_main: bool) {
     let state = app.state::<CaptureState>();
-    region::close_overlays(app);
+    region::release_overlays(app);
     state.session.lock().unwrap().take();
     for label in std::mem::take(&mut *state.hidden.lock().unwrap()) {
         if let Some(win) = app.get_webview_window(&label) {
@@ -411,6 +471,10 @@ fn fail(app: &AppHandle, error: AppError) {
 pub(crate) fn cancel(app: &AppHandle) {
     end_session(app, false);
     let _ = app.emit("capture://cancelled", json!({}));
+}
+
+fn session_id(app: &AppHandle) -> Option<u64> {
+    app.state::<CaptureState>().session.lock().unwrap().as_ref().map(|s| s.id)
 }
 
 fn no_session() -> AppError {

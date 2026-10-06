@@ -20,7 +20,7 @@ test('permission failures explain an already-enabled setting without repeated bl
   await expect(page.getByRole('status').getByRole('button', { name: 'Settings' })).toBeVisible();
   // Permission recovery is checked on every capture; a later revocation can explain itself again.
   await page.locator('.capture-button').click();
-  await expect(page.getByTestId('title')).toContainText('800 × 520');
+  await expect(page.getByTestId('doc-size')).toContainText('800 × 520');
   await denied();
   await expect(dialog).toBeVisible();
 });
@@ -40,7 +40,7 @@ test('split capture button runs directly and remembers the menu selection', asyn
   const main = page.locator('.capture-button');
   const arrow = page.getByRole('button', { name: 'Choose capture action', exact: true });
   const menu = page.getByRole('menu', { name: 'Capture action', exact: true });
-  const title = page.getByTestId('title');
+  const title = page.getByTestId('doc-size');
 
   await main.click();
   await expect(title).toContainText('800 × 520');

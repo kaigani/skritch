@@ -98,7 +98,7 @@ export async function importVideos(paths: string[]): Promise<void> {
   if (ui().frameEdit && !(await backToVideo())) return;
   if (ui().mode === 'image' && docState().doc) {
     const choice = await askArrival('video', paths.length);
-    if (choice === 'cancel' || !(await confirmDiscard())) return;
+    if (choice === 'cancel') return;
     docState().close();
   }
   if (ui().mode !== 'video' || !video().project) {

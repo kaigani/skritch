@@ -17,7 +17,9 @@ Argument names: JS passes camelCase keys; Tauri maps them to snake_case Rust par
 | Command | Input | Output | Notes |
 |---|---|---|---|
 | `capture_start` | `{ kind: 'crosshair'\|'timed'\|'fullscreen'\|'window'\|'previous' }` | `()` | Result delivered by event `capture://result` (hotkeys/tray use the same path). |
-| `capture_overlay_info` | `{ display: u32 }` | `OverlayInfo` | Called by `overlay.html?display=N&mode=…`. |
+| `capture_overlay_info` | `{ display: u32 }` | `OverlayInfo` | Called by the overlay page for display N when it hears `capture://overlay-arm` (and once on load, in case it missed it). |
+| `capture_overlay_pixels` | `{ display: u32 }` | raw bytes | `[width u32 LE][height u32 LE]` + RGBA8 rows of the frozen shot (no image encoding). |
+| `capture_overlay_ready` | `{ display: u32, session: u64 }` | `()` | The overlay has drawn the shot; Rust then shows the (hidden, pre-positioned) window. |
 | `capture_overlay_finish` | `{ display: u32, rect: Rect \| null, timed: bool }` | `()` | `rect` in **physical px of that display's shot**; `null` = cancel (closes all overlays, emits `capture://cancelled`). `timed` = true → close overlays, 5 s countdown (tray tooltip/title `Skritch — 5…1`, event `capture://countdown {remaining}`), then RE-capture that display and crop to rect. |
 | `capture_last` | – | `CaptureResult \| null` | Last capture if < 10 min old and still on disk ("Recover Last Capture"; the tray item emits `menu://action {action:'recover'}`, the frontend then calls this). |
 | `capture_permission_status` | – | `'granted'\|'denied'\|'unknown'` | macOS TCC; Windows returns `'granted'`. |
@@ -44,6 +46,7 @@ Argument names: JS passes camelCase keys; Tauri maps them to snake_case Rust par
 | `video_cancel` | `{ jobId }` | `()` | kills ffmpeg, deletes partial output; unknown/finished ids are ignored |
 | `tray_set_dropzone_visible` | `{ visible }` | `()` | Windows Drop Zone window (`dropzone.html`, 120×120, always on top, frameless) |
 | `show_main_window` | – | `()` | show + un-minimise + focus main |
+| `drag_out` | `{ path, icon }` | `()` | starts a native file drag (Drag Me) from the calling window and hides that window while it runs; a drop returns it behind other windows, a cancel brings it back to the front. Resolves once the drag has started (macOS) / finished (Windows). |
 | `take_launch_paths` | – | `string[]` | File paths the app was *first* launched with (file association / "Open with"); returns them once, then `[]`. Call once when the main window is ready. Later launches are forwarded as `files://dropped {source:'args'}`. |
 
 ## Types
@@ -51,7 +54,7 @@ Argument names: JS passes camelCase keys; Tauri maps them to snake_case Rust par
 ```ts
 type Rect = { x: number; y: number; w: number; h: number };
 type OverlayInfo = {
-  shotPath: string;            // PNG of the frozen display shot (frontend loads via convertFileSrc)
+  session: number;             // id of this capture (overlay pages are reused between captures)
   width: number; height: number;   // physical px
   scale: number;               // display scale factor
   windows: { x: number; y: number; w: number; h: number; title: string }[];  // window mode only (else []): topmost first, physical px relative to this display, clipped to it; excludes minimised + Skritch windows
@@ -109,11 +112,13 @@ Window drops onto the main window are read directly in JS via `getCurrentWebview
   `capture://result`, `capture://cancelled`, `capture://error`. A second start while one is running fails with code
   `busy`. Skritch windows are hidden before grabbing; after a result or error the main window is shown and focused,
   after a cancel the previously visible windows are restored.
-- **Overlay windows** are labelled `overlay-N`, url `overlay.html?display=N&mode=crosshair|timed|window`, transparent,
-  undecorated, always on top, exactly covering display N (all displays get one; overlay 0 is focused). They are
-  created hidden and shown immediately, before the page has loaded — keep the page background transparent until the
-  shot image has loaded. Load the shot with `convertFileSrc(info.shotPath)` (it lives under `$TEMP`, already in the
-  asset scope). `rect` may be fractional / have negative w/h; Rust normalises, rounds and clamps it. A zero-area rect
+- **Overlay windows** are labelled `overlay-N`, url `overlay.html?display=N`, transparent, undecorated, always on top,
+  exactly covering display N (all displays get one; overlay 0 is focused). They are created hidden shortly after app
+  start and **reused**: per capture Rust positions them, emits `capture://overlay-arm` (payload: session id) to
+  `overlay-N`, the page loads `capture_overlay_info` + `capture_overlay_pixels`, draws, calls `capture_overlay_ready`
+  and Rust shows the window. When the capture ends the window is hidden and receives `capture://overlay-reset`
+  (drop the shot, render nothing). A watchdog shows an armed overlay after 2.5 s even without `ready`.
+  Set `SKRITCH_PERF=1` to log a capture-latency timeline to stderr. `rect` may be fractional / have negative w/h; Rust normalises, rounds and clamps it. A zero-area rect
   yields `capture://error` (code `invalid`) — send `null` for a plain click/Esc instead. Alt+F4 on an overlay = cancel.
   Only the first `capture_overlay_finish` counts; later calls get error `no_session`.
 - **Capture result PNGs** are written to `$TEMP/skritch-capture/` and kept ≥ 10 min.

@@ -1,7 +1,23 @@
 # Changelog
 
-## Unreleased
+## 0.2.0 — Unreleased
 
+Not yet published; the public downloads are still 0.1.0.
+
+- Faster Screen Snap: the selection overlay appears in about 0.3–0.5 s instead of about 3 s. Overlay
+  windows are created ahead of time and reused, the frozen screen is sent as raw pixels instead of
+  being encoded to PNG first, and window listing overlaps the screen grab.
+- Top bar: SKRITCH on the left, the capture button centred. Image size moved to the footer next to
+  the zoom; the footer also shows "Edited" and, in video mode, the clip summary.
+- Drag Me hides the window as soon as the drag starts, so files can't be dropped back on Skritch. A
+  drop returns the window behind other apps; a cancelled drag brings it to the front.
+- The "Drag this tab…" hint only appears for a real click on the tab, not after a drag.
+- "New capture ready": buttons are Cancel, Add to Canvas, Replace, with Replace the default (Enter).
+  Replace no longer asks "Save changes?"; closing the window still does.
+- Crop has two modes, Crop and Scale. The separate Canvas mode and its anchor grid are gone: crop
+  handles and W × H fields already grow or trim the canvas.
+- Scale shows the resulting W × H in pixels, a −/+ slider under the canvas and a live preview.
+- Crop and Scale actions read ✕ Cancel / ✓ Apply.
 - Optional advanced capture controls in Preferences: adjust a region/window after selection, move it,
   resize using corner handles or exact pixel dimensions, and lock its aspect ratio.
 - Switch the pending selection to a five-second timer or the entire current display before confirming.

@@ -89,6 +89,16 @@ export const Icon = {
       <path d="M5.5 2.5v12h12M2.5 5.5h12v12" strokeWidth={2} />
     </Svg>
   ),
+  check: () => (
+    <Svg size={16}>
+      <path d="M4 10.5l4 4 8-9" strokeWidth={2.2} />
+    </Svg>
+  ),
+  close: () => (
+    <Svg size={16}>
+      <path d="M5 5l10 10M15 5L5 15" strokeWidth={2.2} />
+    </Svg>
+  ),
   fit: () => (
     <Svg size={16}>
       <path d="M3 7V3h4M13 3h4v4M17 13v4h-4M7 17H3v-4" />

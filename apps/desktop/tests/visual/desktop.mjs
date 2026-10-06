@@ -31,8 +31,8 @@ await page.waitForTimeout(1500); // thumbnails
 console.log(
   'counter:',
   await text('[data-testid=frame-counter]'),
-  '| title:',
-  await text('[data-testid=title]'),
+  '| summary:',
+  await text('[data-testid=video-summary]'),
 );
 await shot('23-desktop-video-mode');
 
@@ -97,7 +97,7 @@ await page.getByRole('dialog').waitFor({ timeout: 5000 });
 await shot('28-desktop-paste-arrival');
 await page.keyboard.press('Enter');
 await page.waitForTimeout(600);
-console.log('title after paste:', await text('[data-testid=title]'));
+console.log('size after paste:', await text('[data-testid=doc-size]'));
 await shot('29-desktop-paste-added');
 
 if (errors.length) console.log('PAGE ERRORS:\n' + [...new Set(errors)].join('\n'));
