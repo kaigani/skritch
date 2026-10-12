@@ -3,9 +3,11 @@ import { ipc, isTauri } from '../ipc';
 import { canvasToBytes, context2d, makeCanvas } from '../util/canvas';
 import { encodeDocument, writeTempExport } from '../actions/image';
 import { videoDragPath } from '../actions/video';
-import { formatInfo, defaultFileStem, safeFileStem } from '../export/formats';
+import { clearVideoDragExport, prepareVideoExport } from '../export/video';
+import { formatInfo, defaultFileStem, safeFileStem, videoDragFormatInfo } from '../export/formats';
 import { docState, useDoc } from '../state/document';
 import { errorText, ui, useUi } from '../state/ui';
+import { useVideo } from '../state/video';
 import appIcon from '../assets/app-icon.png';
 
 /** Small PNG used as the OS drag image. */
@@ -19,15 +21,20 @@ async function dragIcon(): Promise<string> {
 }
 
 /**
- * The signature "Drag Me" tab (§1.1): dragging it out drops the flattened image (in the chosen format)
+ * The signature "Drag Me" tab (§1.1): dragging it out drops the selected video or image export
  * onto Finder/Explorer, mail, chat, browsers… In the desktop app this starts a native OS file drag; in a
  * plain browser it falls back to an HTML5 DownloadURL drag.
  */
 export function DragMeTab({ disabled }: { disabled: boolean }) {
   const format = useUi((s) => s.dragFormat);
+  const videoFormat = useUi((s) => s.videoDragFormat);
   const mode = useUi((s) => s.mode);
   const revision = useDoc((s) => s.revision);
+  const project = useVideo((s) => s.project);
+  const playhead = useVideo((s) => s.playhead);
+  const audio = useVideo((s) => s.audio);
   const [preparing, setPreparing] = useState(false);
+  const [videoPreparing, setVideoPreparing] = useState(false);
   const start = useRef<{
     x: number;
     y: number;
@@ -47,17 +54,47 @@ export function DragMeTab({ disabled }: { disabled: boolean }) {
       if (browserUrl.current) URL.revokeObjectURL(browserUrl.current.url);
       browserUrl.current = null;
     };
-  }, [format, mode, generation]);
+  }, [format, videoFormat, mode, generation]);
+
+  useEffect(() => {
+    if (
+      mode !== 'video' ||
+      !project?.sequence.length ||
+      (videoFormat !== 'mp4-h264' && videoFormat !== 'mov')
+    ) {
+      clearVideoDragExport();
+      setVideoPreparing(false);
+      return;
+    }
+    if (!isTauri) return;
+    let active = true;
+    setVideoPreparing(true);
+    const timer = setTimeout(() => {
+      void prepareVideoExport(videoFormat)
+        .catch((err) => {
+          if (active) ui().toast(`Couldn’t prepare video: ${errorText(err)}`, { kind: 'error' });
+        })
+        .finally(() => {
+          if (active) setVideoPreparing(false);
+        });
+    }, 300);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [mode, videoFormat, project, audio]);
+
+  useEffect(() => () => clearVideoDragExport(), []);
 
   useEffect(() => {
     if (isTauri) return;
     generation.value++;
     if (browserUrl.current) URL.revokeObjectURL(browserUrl.current.url);
     browserUrl.current = null;
-  }, [revision, generation]);
+  }, [revision, project, playhead, audio, generation]);
 
   const onPointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
-    if (disabled || e.button !== 0) return;
+    if (disabled || videoPreparing || e.button !== 0) return;
     pressed.current = true;
     // Commit a filename still being edited before taking the export snapshot.
     if (document.activeElement instanceof HTMLInputElement) document.activeElement.blur();
@@ -97,19 +134,28 @@ export function DragMeTab({ disabled }: { disabled: boolean }) {
 
   // DownloadURL must be set synchronously in dragstart. Never substitute PNG for the chosen format.
   const onPointerEnter = async () => {
-    if (disabled || isTauri || ui().mode !== 'image') return;
+    if (disabled || isTauri) return;
     const doc = docState().doc;
-    if (!doc) return;
+    if (ui().mode !== 'video' && !doc) return;
     const version = ++generation.value;
     if (browserUrl.current) URL.revokeObjectURL(browserUrl.current.url);
     browserUrl.current = null;
     try {
-      const f = formatInfo(ui().dragFormat);
-      const bytes = await encodeDocument(doc, f.id);
+      const inVideo = ui().mode === 'video';
+      const f = inVideo ? videoDragFormatInfo(ui().videoDragFormat) : formatInfo(ui().dragFormat);
+      const path = inVideo ? await videoDragPath() : null;
+      const bytes = inVideo
+        ? path
+          ? await ipc.fileRead(path)
+          : null
+        : await encodeDocument(doc!, ui().dragFormat);
+      if (!bytes) return;
       if (version !== generation.value) return;
       browserUrl.current = {
         url: URL.createObjectURL(new Blob([bytes], { type: f.mime })),
-        name: `${safeFileStem(doc.meta.title, ipc.platform) || defaultFileStem(new Date(doc.meta.createdAt))}.${f.ext}`,
+        name: path
+          ? path.split(/[\\/]/).pop()!
+          : `${safeFileStem(doc!.meta.title, ipc.platform) || defaultFileStem(new Date(doc!.meta.createdAt))}.${f.ext}`,
         mime: f.mime,
       };
     } catch (err) {
@@ -122,13 +168,13 @@ export function DragMeTab({ disabled }: { disabled: boolean }) {
       type="button"
       className="dragme"
       aria-label="Drag me to share"
-      disabled={disabled}
-      aria-disabled={disabled}
-      aria-busy={preparing}
+      disabled={disabled || videoPreparing}
+      aria-disabled={disabled || videoPreparing}
+      aria-busy={preparing || videoPreparing}
       title={
         disabled
           ? 'Open an image or video to export'
-          : `Drag ${mode === 'video' ? 'video' : formatInfo(format).label} to Finder, the Desktop, or another app`
+          : `Drag ${mode === 'video' ? `${videoDragFormatInfo(videoFormat).label}${videoFormat === 'mp4-h264' || videoFormat === 'mov' ? ' video' : ' still frame'}` : formatInfo(format).label} to Finder, the Desktop, or another app`
       }
       draggable={!isTauri && !disabled}
       onPointerDown={onPointerDown}
@@ -137,7 +183,8 @@ export function DragMeTab({ disabled }: { disabled: boolean }) {
       // clicks in the window, which showed this hint while they were choosing a tool.
       onPointerUp={() => {
         start.current = null;
-        if (pressed.current) ui().toast('Drag this tab to Finder, the Desktop, or another app to save a file.');
+        if (pressed.current)
+          ui().toast('Drag this tab to Finder, the Desktop, or another app to save a file.');
         pressed.current = false;
       }}
       onPointerCancel={() => {
@@ -163,7 +210,7 @@ export function DragMeTab({ disabled }: { disabled: boolean }) {
         <i />
         <i />
       </span>
-      {preparing ? 'Preparing…' : 'Drag Me'}
+      {preparing || videoPreparing ? 'Preparing…' : 'Drag Me'}
     </button>
   );
 }

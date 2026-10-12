@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { ImageFormat } from '../ipc';
+import type { VideoDragFormat } from '../export/formats';
 import type { Rect, ShapeKind, StampGlyph } from '../model/types';
 import { DEFAULT_COLOR } from '../model/types';
 
@@ -50,6 +51,7 @@ interface UiState {
   /** True until the user zooms manually; the view re-fits on window resize while true. */
   autoFit: boolean;
   dragFormat: ImageFormat;
+  videoDragFormat: VideoDragFormat;
   crop: CropState | null;
   arrival: Arrival | null;
   toasts: Toast[];
@@ -85,6 +87,7 @@ export const useUi = create<UiState>((set, get) => ({
   zoom: 1,
   autoFit: true,
   dragFormat: 'png',
+  videoDragFormat: 'mp4-h264',
   crop: null,
   arrival: null,
   toasts: [],

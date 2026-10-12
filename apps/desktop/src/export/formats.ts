@@ -11,6 +11,17 @@ export const IMAGE_FORMATS: { id: ImageFormat; label: string; ext: string; mime:
 
 export const formatInfo = (id: ImageFormat) => IMAGE_FORMATS.find((f) => f.id === id)!;
 
+export type VideoDragFormat = ImageFormat | 'mp4-h264' | 'mov';
+export const VIDEO_DRAG_FORMATS = [
+  { id: 'mp4-h264' as const, label: 'MP4', ext: 'mp4', mime: 'video/mp4' },
+  { id: 'mov' as const, label: 'MOV', ext: 'mov', mime: 'video/quicktime' },
+  ...IMAGE_FORMATS,
+];
+export const videoDragFormatInfo = (id: VideoDragFormat) => VIDEO_DRAG_FORMATS.find((f) => f.id === id)!;
+
+export const videoFileStem = (title?: string, platform = 'other') =>
+  safeFileStem(title || 'Untitled Video', platform) || 'Untitled Video';
+
 export const IMAGE_EXTS = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'tif', 'tiff'];
 export const VIDEO_EXTS = ['mp4', 'mov', 'm4v', 'webm', 'mkv', 'avi'];
 export const PROJECT_EXTS = ['skritch', 'skritchv'];

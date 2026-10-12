@@ -15,4 +15,5 @@ pub fn countdown(app: &AppHandle) {
         std::thread::sleep(Duration::from_secs(1));
     }
     crate::tray::set_status(app, None);
+    let _ = app.emit("capture://countdown", json!({ "remaining": 0 }));
 }

@@ -38,6 +38,8 @@ export interface Markers {
 export interface VideoProject {
   id: Id;
   version: 1;
+  /** Filename stem, shared by video, still-frame and project exports. Optional for older projects. */
+  title?: string;
   clips: Record<Id, Clip>;
   sequence: Segment[];
   /** Sequence frame indices, half-open [in, out). */

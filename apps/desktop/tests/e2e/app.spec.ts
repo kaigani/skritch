@@ -69,7 +69,11 @@ test('arrival dialog: Esc cancels, Replace (default) replaces, Add to Canvas add
 
   const replaced = await size(page).innerText();
   await snap(page);
-  await expect(page.getByRole('dialog').getByRole('button')).toHaveText(['Cancel', 'Add to Canvas', 'Replace']);
+  await expect(page.getByRole('dialog').getByRole('button')).toHaveText([
+    'Cancel',
+    'Add to Canvas',
+    'Replace',
+  ]);
   await page.keyboard.press('Enter'); // default = Replace
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(size(page)).not.toHaveText(replaced);
@@ -221,6 +225,7 @@ test('video: import, append, step, mark, delete, undo, frame → image and back'
   await dropClip(page, 'clipA');
   await expect(page.getByTestId('frame-counter')).toHaveText('frame 0 / 90');
   await dropClip(page, 'clipB');
+  await page.getByRole('button', { name: 'Add to Video', exact: true }).click();
   await expect(page.getByTestId('frame-counter')).toHaveText('frame 0 / 150');
   await expect(page.getByTestId('video-summary')).toContainText('2 clips');
 
@@ -256,6 +261,7 @@ test('video: split at playhead and reorder by dragging a block', async ({ page }
   await dropClip(page, 'clipA');
   await expect(page.getByTestId('frame-counter')).toHaveText('frame 0 / 90');
   await dropClip(page, 'clipB');
+  await page.getByRole('button', { name: 'Add to Video', exact: true }).click();
   await expect(page.locator('.block')).toHaveCount(2);
   const blocks = page.locator('.block');
   // the timeline re-fits after the second clip lands; measure once the layout has settled
@@ -283,6 +289,44 @@ test('video: split at playhead and reorder by dragging a block', async ({ page }
   await page.keyboard.press('Shift+ArrowRight');
   await page.keyboard.press('Control+k');
   await expect(page.locator('.block')).toHaveCount(3);
+});
+
+test('video: incoming clips offer Cancel, Add to Video, and Replace', async ({ page }) => {
+  await fresh(page);
+  await dropClip(page, 'clipA');
+  await expect(page.getByTestId('frame-counter')).toHaveText('frame 0 / 90');
+  await page.getByRole('button', { name: 'Edit filename', exact: true }).click();
+  await page.getByRole('textbox', { name: 'Filename', exact: true }).fill('My current edit');
+  await page.getByRole('textbox', { name: 'Filename', exact: true }).press('Enter');
+  await page.keyboard.press('Shift+ArrowRight');
+
+  await dropClip(page, 'clipB');
+  const dialog = page.getByRole('alertdialog', { name: 'Open new video?' });
+  await expect(dialog.getByRole('button')).toHaveText(['Cancel', 'Replace', 'Add to Video']);
+  await page.keyboard.press('Escape');
+  await expect(dialog).toHaveCount(0);
+  await expect(page.getByTestId('frame-counter')).toHaveText('frame 10 / 90');
+  await expect(page.locator('.block')).toHaveCount(1);
+  await expect(page.getByRole('button', { name: 'Edit filename', exact: true })).toHaveText(
+    'My current edit',
+  );
+
+  await dropClip(page, 'clipB');
+  await expect(dialog).toBeVisible();
+  await page.keyboard.press('Enter'); // Add is the default.
+  await expect(page.getByTestId('frame-counter')).toHaveText('frame 10 / 150');
+  const modifier = await page.evaluate(() => (/Mac/.test(navigator.userAgent) ? 'Meta' : 'Control'));
+  await page.keyboard.press(`${modifier}+z`);
+  await expect(page.getByTestId('frame-counter')).toHaveText('frame 10 / 90');
+  await page.keyboard.press(`${modifier}+Shift+z`);
+  await expect(page.locator('.block')).toHaveCount(2);
+
+  await dropClip(page, 'frames');
+  await dialog.getByRole('button', { name: 'Replace', exact: true }).click();
+  await expect(page.getByTestId('frame-counter')).toHaveText('frame 0 / 72');
+  await expect(page.locator('.block')).toHaveCount(1);
+  await expect(page.locator('.block')).toContainText('frames');
+  await expect(page.getByRole('button', { name: 'Edit filename', exact: true })).toHaveText('Untitled Video');
 });
 
 /** Frame index encoded in `frames.*`: flat grey, luma = 16 + 3·N, explicitly tagged sRGB. */

@@ -5,7 +5,8 @@ import { seqLength } from '../model/edl';
 import { formatTimecode } from '../model/timecode';
 import { errorText, ui, useUi } from '../state/ui';
 import { usePrefs } from '../state/prefs';
-import { useVideo, video } from '../state/video';
+import { useVideo } from '../state/video';
+import { videoFileStem } from '../export/formats';
 
 const FORMATS: { id: VideoFormat; label: string; ext: string }[] = [
   { id: 'mp4-h264', label: 'MP4 (H.264)', ext: 'mp4' },
@@ -47,7 +48,7 @@ export function ExportVideoDialog() {
   const start = async () => {
     const f = FORMATS.find((x) => x.id === format)!;
     const outPath = await ipc.saveDialog({
-      defaultPath: `Untitled Video.${f.ext}`,
+      defaultPath: `${videoFileStem(project.title, ipc.platform)}.${f.ext}`,
       filters: [{ name: f.label, extensions: [f.ext] }],
     });
     if (!outPath) return;
@@ -68,7 +69,7 @@ export function ExportVideoDialog() {
       ),
       await ipc.on<{ jobId: string; path: string }>('video://render-done', (p) => {
         if (p.jobId !== jobId) return;
-        useVideo.setState({ lastRenderPath: p.path, savedProject: video().project });
+        useVideo.setState({ lastRenderPath: p.path, savedProject: project });
         ui().toast(`Exported ${p.path.split(/[\\/]/).pop()}`);
         close();
       }),

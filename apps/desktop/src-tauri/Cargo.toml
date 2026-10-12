@@ -31,8 +31,8 @@ percent-encoding = "2"
 base64 = "0.22"
 
 [target.'cfg(target_os = "macos")'.dependencies]
-objc2 = "0.6"
-objc2-foundation = { version = "0.3", default-features = false, features = ["std", "NSArray", "NSGeometry", "NSString", "NSURL"] }
+objc2 = { version = "0.6", features = ["exception"] }
+objc2-foundation = { version = "0.3", default-features = false, features = ["std", "NSArray", "NSException", "NSGeometry", "NSString", "NSURL"] }
 objc2-app-kit = { version = "0.3", default-features = false, features = [
   "std", "objc2-core-foundation", "NSButton", "NSControl", "NSDragging", "NSGraphics", "NSPasteboard",
   "NSPageLayout", "NSPrintInfo", "NSPasteboardItem", "NSResponder", "NSStatusBarButton", "NSStatusItem", "NSView", "NSWindow",
@@ -46,7 +46,10 @@ windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Graphic
 codegen-units = 1
 lto = true
 opt-level = "s"
-panic = "abort"
+# Wry catches NSExceptions when WebKit cancels an in-flight media/IPC request.
+# objc2::exception::catch cannot catch foreign exceptions with panic = "abort";
+# release builds would terminate instead of discarding the cancelled response.
+panic = "unwind"
 strip = true
 
 # Dependencies (image/PNG, xcap, ...) are compiled with optimisations even in dev builds: an

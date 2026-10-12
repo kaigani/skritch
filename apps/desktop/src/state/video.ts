@@ -25,6 +25,7 @@ export function newProject(): VideoProject {
   return {
     id: nanoid(),
     version: 1,
+    title: 'Untitled Video',
     clips: {},
     sequence: [],
     markers: {},

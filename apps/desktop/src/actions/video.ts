@@ -3,7 +3,8 @@ import { nanoid } from 'nanoid';
 import { ipc, isTauri, type ClipInfo } from '../ipc';
 import { documentFromImage } from '../model/commands/document';
 import { locate, type Clip, type VideoProject } from '../model/edl';
-import { baseName, extOf } from '../export/formats';
+import { baseName, extOf, videoFileStem } from '../export/formats';
+import { prepareVideoExport } from '../export/video';
 import { fromBase64, toBase64 } from '../export/serialize';
 import { docState } from '../state/document';
 import { askConfirm, errorText, ui, useUi } from '../state/ui';
@@ -27,9 +28,10 @@ export function isPlayable(info: Pick<ClipInfo, 'codec' | 'path'>): boolean {
   return document.createElement('video').canPlayType(mime) !== '';
 }
 
-/** First-frame thumbnails for clip blocks; call once the clips are in the project. */
-function loadThumbnails(clips: Clip[]): void {
-  for (const c of clips)
+/** Prepare previews only after the clips belong to the current project. */
+function prepareClips(clips: Clip[]): void {
+  for (const c of clips) {
+    if (!c.playUrl) void makeProxy(c);
     void ipc
       .videoThumbnail(c.path, c.frames[0], 80)
       .then((png) => {
@@ -38,6 +40,7 @@ function loadThumbnails(clips: Clip[]): void {
           video().setClip({ ...cur, thumbnail: URL.createObjectURL(new Blob([png], { type: 'image/png' })) });
       })
       .catch(() => {});
+  }
 }
 
 async function loadClip(path: string): Promise<Clip> {
@@ -58,7 +61,6 @@ async function loadClip(path: string): Promise<Clip> {
     rotation: info.rotation,
   };
   if (isPlayable(info)) clip.playUrl = ipc.fileUrl(path);
-  else void makeProxy(clip);
   return clip;
 }
 
@@ -73,8 +75,9 @@ async function makeProxy(clip: Clip): Promise<void> {
     const { proxyPath } = await ipc.videoMakeProxy(clip.path, clip.id);
     await ipc.allowAssetPath(proxyPath);
     const proxy = await ipc.videoProbe(proxyPath);
-    const cur = video().project?.clips[clip.id] ?? clip;
-    video().setClip({ ...cur, proxyPath, proxyFrames: proxy.frames, playUrl: ipc.fileUrl(proxyPath) });
+    const cur = video().project?.clips[clip.id];
+    if (cur)
+      video().setClip({ ...cur, proxyPath, proxyFrames: proxy.frames, playUrl: ipc.fileUrl(proxyPath) });
   } catch (e) {
     ui().toast(`Couldn’t prepare ${clip.displayName}: ${errorText(e)}`, { kind: 'error' });
   } finally {
@@ -87,7 +90,7 @@ async function makeProxy(clip: Clip): Promise<void> {
 }
 
 /**
- * Entry point for video arrivals (§6.1): opens Video mode, or appends to the open project (3A).
+ * Entry point for video arrivals: choose Add / Replace / Cancel when a timeline is open.
  * Multiple files are appended in filename-sorted order.
  */
 export async function importVideos(paths: string[]): Promise<void> {
@@ -96,14 +99,25 @@ export async function importVideos(paths: string[]): Promise<void> {
     baseName(a).localeCompare(baseName(b), undefined, { numeric: true }),
   );
   if (ui().frameEdit && !(await backToVideo())) return;
+  let replace = false;
+  if (ui().mode === 'video' && video().project?.sequence.length) {
+    video().set({ playing: false });
+    const choice = await askConfirm({
+      title: paths.length > 1 ? 'Open new videos?' : 'Open new video?',
+      message:
+        'Add to Video appends the new clips. Replace starts a new video and removes the current edits.',
+      buttons: [
+        { label: 'Cancel', value: 'cancel', cancel: true },
+        { label: 'Replace', value: 'replace' },
+        { label: 'Add to Video', value: 'add', primary: true },
+      ],
+    });
+    if (choice === 'cancel') return;
+    replace = choice === 'replace';
+  }
   if (ui().mode === 'image' && docState().doc) {
     const choice = await askArrival('video', paths.length);
     if (choice === 'cancel') return;
-    docState().close();
-  }
-  if (ui().mode !== 'video' || !video().project) {
-    video().open(newProject());
-    useUi.setState({ mode: 'video', crop: null, popover: null });
   }
   useUi.setState({ busy: paths.length > 1 ? `Importing ${paths.length} clips…` : 'Importing clip…' });
   try {
@@ -116,10 +130,15 @@ export async function importVideos(paths: string[]): Promise<void> {
       }
     }
     if (clips.length) {
+      // Keep the current edit intact until at least one incoming clip opens successfully.
+      if (replace || ui().mode !== 'video' || !video().project) {
+        docState().close();
+        video().open(newProject());
+        useUi.setState({ mode: 'video', crop: null, popover: null });
+      }
       edl.appendClips(clips);
-      loadThumbnails(clips);
+      prepareClips(clips);
     }
-    if (!video().project?.sequence.length) closeVideo();
   } finally {
     useUi.setState({ busy: null });
   }
@@ -144,7 +163,7 @@ async function currentFramePng(): Promise<{ png: Uint8Array; name: string } | nu
   const ref = currentFrameRef();
   if (!ref) return null;
   const png = await ipc.videoFramePng(ref.clip.path, ref.pts, ref.clip.rotation);
-  return { png, name: `${baseName(ref.clip.displayName)}-f${ref.clipFrame}.png` };
+  return { png, name: `${videoFileStem(video().project?.title, ipc.platform)}.png` };
 }
 
 /** ⇧⌘E — full-resolution frame from the original, via a Save dialog (§6.7). */
@@ -164,12 +183,9 @@ export async function exportFramePng(): Promise<void> {
   }
 }
 
-/** Temp file for the Drag Me tab in video mode: the rendered video if one exists, else the frame. */
+/** Temp file for the chosen video or still-frame Drag Me format. */
 export async function videoDragPath(): Promise<string | null> {
-  const rendered = video().lastRenderPath;
-  if (rendered) return rendered;
-  const f = await currentFramePng();
-  return f ? ipc.tempWrite(f.name, f.png) : null;
+  return prepareVideoExport();
 }
 
 /** ⌘⏎ — open the current frame as an image document, pushing the video onto the mode stack. */
@@ -205,7 +221,7 @@ export async function saveVideoProject(): Promise<void> {
   const p = video().project;
   if (!p) return;
   const path = await ipc.saveDialog({
-    defaultPath: 'Untitled Video.skritchv',
+    defaultPath: `${videoFileStem(p.title, ipc.platform)}.skritchv`,
     filters: [{ name: 'Skritch Video Project', extensions: ['skritchv'] }],
   });
   if (!path) return;
@@ -231,14 +247,13 @@ export async function openVideoProject(bytes: Uint8Array): Promise<void> {
     const clip: Clip = { ...c, frames: new Float64Array(u8.buffer, u8.byteOffset, u8.byteLength / 8) };
     await ipc.allowAssetPath(c.path);
     if (isPlayable({ codec: c.codec, path: c.path })) clip.playUrl = ipc.fileUrl(c.path);
-    else void makeProxy(clip);
     clips[c.id] = clip;
   }
   if (ui().mode === 'image' && !(await confirmDiscard())) return;
   docState().close();
   video().open({ ...s, clips });
   useUi.setState({ mode: 'video', frameEdit: false });
-  loadThumbnails(Object.values(clips));
+  prepareClips(Object.values(clips));
 }
 
 /** Close request in video mode: "Save video?" opens the Export dialog (Save = render, §6.5). */

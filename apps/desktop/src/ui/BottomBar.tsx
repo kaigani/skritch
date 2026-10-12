@@ -2,10 +2,17 @@ import { useRef, useState } from 'react';
 import { ipc } from '../ipc';
 import { renameDocument } from '../model/commands/document';
 import { renderer } from '../canvas/Renderer';
-import { IMAGE_FORMATS, formatInfo, safeFileStem } from '../export/formats';
+import {
+  IMAGE_FORMATS,
+  VIDEO_DRAG_FORMATS,
+  formatInfo,
+  safeFileStem,
+  videoDragFormatInfo,
+  videoFileStem,
+} from '../export/formats';
 import { docState, isDirty, useDoc } from '../state/document';
 import { ui, useUi } from '../state/ui';
-import { useVideo } from '../state/video';
+import { useVideo, video } from '../state/video';
 import { seqLength } from '../model/edl';
 import { formatTimecode } from '../model/timecode';
 import { DragMeTab } from './DragMeTab';
@@ -20,29 +27,33 @@ export function BottomBar() {
   const mode = useUi((s) => s.mode);
   const zoom = useUi((s) => s.zoom);
   const dragFormat = useUi((s) => s.dragFormat);
+  const videoDragFormat = useUi((s) => s.videoDragFormat);
+  const selectedFormat = mode === 'video' ? videoDragFormat : dragFormat;
   const popover = useUi((s) => s.popover);
   const set = useUi((s) => s.set);
   const doc = useDoc((s) => s.doc);
   const dirty = useDoc(isDirty);
+  const hasVideo = useVideo((s) => !!s.project?.sequence.length);
   const fmtRef = useRef<HTMLButtonElement>(null);
 
   return (
     <footer className="bottombar">
       <div className="export-tab">
-        {mode !== 'video' && (
-          <button
-            ref={fmtRef}
-            className="format-button"
-            aria-label="Drag format"
-            aria-haspopup="menu"
-            aria-expanded={popover === 'format'}
-            title="Choose the file format for Drag Me"
-            onClick={() => set({ popover: popover === 'format' ? null : 'format' })}
-          >
-            {formatInfo(dragFormat).label} <span className="caret">▼</span>
-          </button>
-        )}
-        <DragMeTab disabled={mode === 'empty' || (mode === 'image' && !doc)} />
+        <button
+          ref={fmtRef}
+          className="format-button"
+          aria-label="Drag format"
+          aria-haspopup="menu"
+          aria-expanded={popover === 'format'}
+          title="Choose the file format for Drag Me"
+          onClick={() => set({ popover: popover === 'format' ? null : 'format' })}
+        >
+          {(mode === 'video' ? videoDragFormatInfo(videoDragFormat) : formatInfo(dragFormat)).label}{' '}
+          <span className="caret">▼</span>
+        </button>
+        <DragMeTab
+          disabled={mode === 'empty' || (mode === 'image' && !doc) || (mode === 'video' && !hasVideo)}
+        />
       </div>
       {mode === 'image' && doc ? (
         <div className="doc-name" data-testid="doc-name">
@@ -89,11 +100,15 @@ export function BottomBar() {
           onClose={() => set({ popover: null })}
         >
           <div role="menu" aria-label="Drag format">
-            {IMAGE_FORMATS.map((f) => (
+            {(mode === 'video' ? VIDEO_DRAG_FORMATS : IMAGE_FORMATS).map((f) => (
               <MenuItem
                 key={f.id}
-                label={`${dragFormat === f.id ? '✓ ' : '   '}${f.label}`}
-                onClick={() => set({ dragFormat: f.id, popover: null })}
+                label={`${selectedFormat === f.id ? '✓ ' : '   '}${f.label}`}
+                onClick={() =>
+                  mode === 'video'
+                    ? set({ videoDragFormat: f.id, popover: null })
+                    : set({ dragFormat: f.id as typeof dragFormat, popover: null })
+                }
               />
             ))}
           </div>
@@ -109,27 +124,42 @@ function VideoSummary() {
   const n = project.sequence.length;
   return (
     <span className="video-summary" data-testid="video-summary">
-      Untitled Video — {n} clip{n === 1 ? '' : 's'} ·{' '}
-      {formatTimecode(seqLength(project.sequence), project.output.fps)} ·{' '}
-      {Math.round(project.output.fps * 100) / 100} fps
+      <Filename key={project.id} id={project.id} title={project.title || 'Untitled Video'} videoMode />
+      <span>
+        {n} clip{n === 1 ? '' : 's'} · {formatTimecode(seqLength(project.sequence), project.output.fps)} ·{' '}
+        {Math.round(project.output.fps * 100) / 100} fps
+      </span>
     </span>
   );
 }
 
 /** The extension belongs to the format selector; this control edits the shared document filename. */
-function Filename({ id, title }: { id: string; title: string }) {
+function Filename({ id, title, videoMode = false }: { id: string; title: string; videoMode?: boolean }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(title);
   const finished = useRef(false);
   const finish = (commit: boolean) => {
     if (finished.current) return;
     finished.current = true;
-    if (commit && docState().doc?.id === id) {
-      const stem = safeFileStem(draft.replace(/\.(png|jpe?g|tiff?|pdf|bmp|gif)$/i, ''), ipc.platform);
+    if (commit && (videoMode ? video().project?.id === id : docState().doc?.id === id)) {
+      const stem = safeFileStem(
+        draft.replace(
+          videoMode
+            ? /\.(mp4|mov|skritchv|png|jpe?g|tiff?|pdf|bmp|gif)$/i
+            : /\.(png|jpe?g|tiff?|pdf|bmp|gif)$/i,
+          '',
+        ),
+        ipc.platform,
+      );
       if (!stem) ui().toast('Please enter a filename.');
       else if (stem !== title) {
-        docState().execute(renameDocument(stem));
-        docState().seal();
+        if (videoMode) {
+          video().exec('Rename video', () => ({ title: videoFileStem(stem, ipc.platform) }));
+          video().seal();
+        } else {
+          docState().execute(renameDocument(stem));
+          docState().seal();
+        }
       }
     }
     setEditing(false);

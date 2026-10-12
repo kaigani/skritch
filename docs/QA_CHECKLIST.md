@@ -4,6 +4,43 @@ Tick per platform (W = Windows 11, M = macOS 14/15). Status on 2026-09-27: first
 1920×1080 display, debug build). macOS automated verification was added on 2026-09-28; unchecked items
 below still require manual OS-level interaction.
 
+## Video arrival choices — 2026-10-10
+
+- [x] Opening/dropping another video offers Cancel, Replace, and Add to Video; Enter adds, Escape cancels.
+- [x] Add preserves the current filename, trims, playhead, and output settings; Undo/Redo handles the import.
+- [x] Replace starts a fresh timeline after a new clip loads; failed imports preserve the previous edit.
+- [x] Multiple clips append in filename order; an empty timeline imports without a prompt.
+- [x] Unit tests and Chromium/WebKit video regression checks cover these choices and existing editing flows.
+- [ ] Packaged app: exercise Open and Finder/Explorer drops with Add, Replace, and Cancel.
+
+## Video drag formats and filenames — 2026-10-10
+
+- [x] Video format selector offers MP4, MOV and PNG/JPG/TIFF/PDF/BMP/GIF still frames.
+- [x] Filename editing commits with Enter/blur, cancels with Escape, and supports Undo/Redo.
+- [x] Exports read trimmed original clips; matching preparation is reused, changed edits/formats
+  render again, obsolete jobs are cancelled, and render errors release listeners for retry.
+- [x] Browser regression verifies named PNG/JPG drag payloads and saved video-project names in
+  Chromium and WebKit; unit coverage checks all still formats and exact source-frame timestamps.
+- [ ] Packaged desktop app: trim then drag MP4/MOV into Finder/Explorer; verify duration, filename,
+  playback and audio. Change the filename and trim again, then verify a fresh export.
+- [ ] Native drag of a still frame into Finder/Explorer for each image format.
+
+## Native video cancellation exceptions — 2026-10-09
+
+Skritch 0.2.0's Intel crash report is consistent with a worker-thread abort during custom-protocol
+response delivery after trimming, then scrubbing or playing a video. Wry 0.57.0 catches exceptions
+from stopped WebKit tasks, but objc2 documents that
+`panic = "abort"` disables that catch. Keep release builds on `panic = "unwind"`.
+Related upstream race: https://github.com/tauri-apps/wry/issues/1822.
+
+- [x] Isolated native exception check: the old release strategy aborts with SIGABRT; unwinding
+  catches 100 simulated cancellation exceptions on a worker thread and exits successfully.
+- [x] Run `cargo run --locked --release --example protocol_exception` from
+  `apps/desktop/src-tauri` on macOS. This must run as a release executable: `cargo test --release`
+  uses unwinding regardless of the shipping profile and cannot detect this regression.
+- [ ] Packaged Mac app: scrub rapidly, switch clips, close/reopen video projects, and return after
+  sleep while media requests are pending. Confirm playback remains usable and no abort occurs.
+
 ## Capture
 - [x] W — Ctrl+Shift+7 fullscreen snap opens a document at display size, Skritch window not in the shot
 - [x] W — Ctrl+Shift+5 overlay covers the display, dimmed frozen shot, Esc cancels and restores the window
