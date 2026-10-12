@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.2.1 — 2026-10-12
+
+Mac release (universal DMG). Windows downloads remain 0.1.0.
+
+- Opening or dropping videos into an existing timeline offers Cancel, Replace, or Add to Video.
+  Add appends clips and supports Undo; failed replacement imports preserve the current edit.
+- Video Drag Me offers MP4, MOV, and image formats. Video formats render the current edited sequence;
+  image formats export only the frame under the playhead. Preparation refreshes after edits.
+- Video filenames are editable in the footer, with Enter/blur to apply and Escape to cancel. The
+  name is shared by drag exports, still frames, the video export dialog and saved video projects.
+- Mac release builds preserve native exception handling, so a cancelled WebKit media/IPC request
+  can be discarded instead of aborting Skritch while editing video.
+- The "Snapping in 1…" overlay clears when a Timed Snap finishes instead of staying on screen.
+
 ## 0.2.0 — 2026-10-05
 
 Mac release (universal DMG). Windows downloads remain 0.1.0.

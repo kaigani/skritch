@@ -38,7 +38,7 @@ probes (from 0.2.0; the 0.1.0 Mac tools lacked it). The script checks for `--ena
 The source archive distributed alongside each release contains these upstream tarballs, notices and
 build script:
 
-**[Download the v0.2.0 corresponding source archive](https://github.com/kaigani/skritch/releases/download/v0.2.0/Skritch_0.2.0_third-party-sources.tar.gz)**
+**[Download the v0.2.1 corresponding source archive](https://github.com/kaigani/skritch/releases/download/v0.2.1/Skritch_0.2.1_third-party-sources.tar.gz)**
 
 Upstream sources: [FFmpeg](https://ffmpeg.org/releases/ffmpeg-7.1.1.tar.gz),
 [libvpx](https://github.com/webmproject/libvpx/releases/tag/v1.15.0),
