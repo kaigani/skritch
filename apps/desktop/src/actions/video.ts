@@ -145,8 +145,9 @@ export async function importVideos(paths: string[]): Promise<void> {
 }
 
 export function closeVideo(): void {
-  video().close();
+  // Leave video mode before dropping the project; the video UI assumes a project while mode is 'video'.
   useUi.setState({ mode: docState().doc ? 'image' : 'empty' });
+  video().close();
 }
 
 /** Presentation time of the frame under the playhead in the ORIGINAL clip. */

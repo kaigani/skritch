@@ -1,6 +1,6 @@
 [package]
 name = "skritch"
-version = "0.2.1"
+version = "0.2.2"
 description = "Skritch — screenshot, markup and video trim"
 authors = ["Skritch"]
 license = "MIT"

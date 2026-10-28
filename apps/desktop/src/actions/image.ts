@@ -111,7 +111,9 @@ export async function arriveImages(imgs: IncomingImage[]): Promise<void> {
   if (!imgs.length) return;
   if (imgs.some((i) => i.source === 'capture')) lastCapture = { img: imgs[0], at: Date.now() };
   const hasDoc = !!docState().doc && ui().mode === 'image';
-  if (ui().mode === 'video' && !ui().frameEdit) {
+  const leavingVideo = ui().mode === 'video' && !ui().frameEdit;
+  if (leavingVideo) {
+    video().set({ playing: false });
     const v = await askConfirm({
       title: 'Open image?',
       message: 'This closes the current video project.',
@@ -121,9 +123,14 @@ export async function arriveImages(imgs: IncomingImage[]): Promise<void> {
       ],
     });
     if (v !== 'replace') return;
-    video().close();
   }
-  if (!hasDoc) return replaceWith(imgs[0]);
+  if (!hasDoc) {
+    await replaceWith(imgs[0]);
+    // Close the project only once image mode is showing: the video UI assumes a project exists while
+    // mode is 'video', so closing earlier crashes the Timeline and blanks the window.
+    if (leavingVideo) video().close();
+    return;
+  }
 
   let choice = prefs().captureArrival as string;
   if (choice === 'ask') choice = await askArrival('image', imgs.length);

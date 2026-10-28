@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.2 — 2026-10-28
+
+Mac release (universal DMG). Windows downloads remain 0.1.0.
+
+- Taking a capture while a video is open no longer blanks the window. The video project is now closed
+  only after the image has opened, and stays open if the image fails to load.
+
 ## 0.2.1 — 2026-10-12
 
 Mac release (universal DMG). Windows downloads remain 0.1.0.
