@@ -11,13 +11,23 @@ export const IMAGE_FORMATS: { id: ImageFormat; label: string; ext: string; mime:
 
 export const formatInfo = (id: ImageFormat) => IMAGE_FORMATS.find((f) => f.id === id)!;
 
-export type VideoDragFormat = ImageFormat | 'mp4-h264' | 'mov';
+export type VideoDragFormat = ImageFormat | 'mp4-h264' | 'mov' | 'wav' | 'm4a';
 export const VIDEO_DRAG_FORMATS = [
   { id: 'mp4-h264' as const, label: 'MP4', ext: 'mp4', mime: 'video/mp4' },
   { id: 'mov' as const, label: 'MOV', ext: 'mov', mime: 'video/quicktime' },
+  { id: 'wav' as const, label: 'WAV', ext: 'wav', mime: 'audio/wav' },
+  { id: 'm4a' as const, label: 'M4A', ext: 'm4a', mime: 'audio/mp4' },
   ...IMAGE_FORMATS,
 ];
 export const videoDragFormatInfo = (id: VideoDragFormat) => VIDEO_DRAG_FORMATS.find((f) => f.id === id)!;
+/** Audio-only exports of the whole edit. */
+export const isAudioFormat = (id: string): id is 'wav' | 'm4a' => id === 'wav' || id === 'm4a';
+/** Formats rendered from the whole edit by FFmpeg, rather than a still of the playhead frame. */
+export const isRenderedFormat = (id: VideoDragFormat): id is 'mp4-h264' | 'mov' | 'wav' | 'm4a' =>
+  id === 'mp4-h264' || id === 'mov' || isAudioFormat(id);
+/** How Drag Me describes a video-mode format, e.g. "MP4 video", "WAV audio", "PNG still frame". */
+export const videoDragDescription = (id: VideoDragFormat) =>
+  `${videoDragFormatInfo(id).label} ${isAudioFormat(id) ? 'audio' : isRenderedFormat(id) ? 'video' : 'still frame'}`;
 
 export const videoFileStem = (title?: string, platform = 'other') =>
   safeFileStem(title || 'Untitled Video', platform) || 'Untitled Video';

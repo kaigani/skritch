@@ -6,6 +6,9 @@ Mac release (universal DMG). Windows downloads remain 0.1.0.
 
 - Taking a capture while a video is open no longer blanks the window. The video project is now closed
   only after the image has opened, and stays open if the image fails to load.
+- Video mode can export audio only, as WAV (16-bit PCM) or M4A (AAC), from the Drag Me format menu and
+  the Export Video dialog. The whole edit is rendered, with silence for clips that have no sound. These
+  formats are unavailable when no clip has audio.
 
 ## 0.2.1 — 2026-10-12
 

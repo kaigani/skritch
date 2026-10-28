@@ -3,7 +3,13 @@ import { locate } from '../model/edl';
 import { buildRenderJob } from '../model/renderJob';
 import { ui } from '../state/ui';
 import { video } from '../state/video';
-import { videoDragFormatInfo, videoFileStem, type VideoDragFormat } from './formats';
+import {
+  isAudioFormat,
+  isRenderedFormat,
+  videoDragFormatInfo,
+  videoFileStem,
+  type VideoDragFormat,
+} from './formats';
 
 // Native temp files are purged after 24 hours; renew cached exports before then.
 const MAX_CACHE_AGE_MS = 23 * 60 * 60 * 1000;
@@ -24,7 +30,7 @@ export async function prepareVideoExport(
   if (!project?.sequence.length) return null;
   const info = videoDragFormatInfo(format);
   const name = `${videoFileStem(project.title, ipc.platform)}.${info.ext}`;
-  if (format !== 'mp4-h264' && format !== 'mov') {
+  if (!isRenderedFormat(format)) {
     const loc = locate(project.sequence, playhead);
     if (!loc) return null;
     const clip = project.clips[loc.seg.clipId];
@@ -36,6 +42,9 @@ export async function prepareVideoExport(
     throw new Error(
       'Video rendering needs the desktop app. Choose an image format to export a still frame here.',
     );
+  const audioOnly = isAudioFormat(format);
+  if (audioOnly && !Object.values(project.clips).some((c) => c.hasAudio))
+    throw new Error('This video has no audio. Choose a video or image format instead.');
   const job = buildRenderJob(project, {
     outPath: '',
     format,
@@ -43,7 +52,8 @@ export async function prepareVideoExport(
     width: project.output.width,
     height: project.output.height,
     fps: project.output.fps,
-    audio,
+    // Preview mute applies to video exports; an audio export always carries the sound.
+    audio: audioOnly || audio,
   });
   // Metadata such as thumbnails and proxy progress must not trigger a fresh render.
   const key = JSON.stringify([project.id, name, job]);

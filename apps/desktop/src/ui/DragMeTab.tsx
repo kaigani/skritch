@@ -4,7 +4,15 @@ import { canvasToBytes, context2d, makeCanvas } from '../util/canvas';
 import { encodeDocument, writeTempExport } from '../actions/image';
 import { videoDragPath } from '../actions/video';
 import { clearVideoDragExport, prepareVideoExport } from '../export/video';
-import { formatInfo, defaultFileStem, safeFileStem, videoDragFormatInfo } from '../export/formats';
+import {
+  formatInfo,
+  defaultFileStem,
+  isAudioFormat,
+  isRenderedFormat,
+  safeFileStem,
+  videoDragDescription,
+  videoDragFormatInfo,
+} from '../export/formats';
 import { docState, useDoc } from '../state/document';
 import { errorText, ui, useUi } from '../state/ui';
 import { useVideo } from '../state/video';
@@ -33,6 +41,11 @@ export function DragMeTab({ disabled }: { disabled: boolean }) {
   const project = useVideo((s) => s.project);
   const playhead = useVideo((s) => s.playhead);
   const audio = useVideo((s) => s.audio);
+  const noAudio =
+    mode === 'video' &&
+    isAudioFormat(videoFormat) &&
+    !Object.values(project?.clips ?? {}).some((c) => c.hasAudio);
+  disabled ||= noAudio;
   const [preparing, setPreparing] = useState(false);
   const [videoPreparing, setVideoPreparing] = useState(false);
   const start = useRef<{
@@ -57,11 +70,7 @@ export function DragMeTab({ disabled }: { disabled: boolean }) {
   }, [format, videoFormat, mode, generation]);
 
   useEffect(() => {
-    if (
-      mode !== 'video' ||
-      !project?.sequence.length ||
-      (videoFormat !== 'mp4-h264' && videoFormat !== 'mov')
-    ) {
+    if (mode !== 'video' || !project?.sequence.length || !isRenderedFormat(videoFormat) || noAudio) {
       clearVideoDragExport();
       setVideoPreparing(false);
       return;
@@ -72,7 +81,10 @@ export function DragMeTab({ disabled }: { disabled: boolean }) {
     const timer = setTimeout(() => {
       void prepareVideoExport(videoFormat)
         .catch((err) => {
-          if (active) ui().toast(`Couldn’t prepare video: ${errorText(err)}`, { kind: 'error' });
+          if (active)
+            ui().toast(`Couldn’t prepare ${videoDragDescription(videoFormat)}: ${errorText(err)}`, {
+              kind: 'error',
+            });
         })
         .finally(() => {
           if (active) setVideoPreparing(false);
@@ -82,7 +94,7 @@ export function DragMeTab({ disabled }: { disabled: boolean }) {
       active = false;
       clearTimeout(timer);
     };
-  }, [mode, videoFormat, project, audio]);
+  }, [mode, videoFormat, project, audio, noAudio]);
 
   useEffect(() => () => clearVideoDragExport(), []);
 
@@ -172,9 +184,11 @@ export function DragMeTab({ disabled }: { disabled: boolean }) {
       aria-disabled={disabled || videoPreparing}
       aria-busy={preparing || videoPreparing}
       title={
-        disabled
-          ? 'Open an image or video to export'
-          : `Drag ${mode === 'video' ? `${videoDragFormatInfo(videoFormat).label}${videoFormat === 'mp4-h264' || videoFormat === 'mov' ? ' video' : ' still frame'}` : formatInfo(format).label} to Finder, the Desktop, or another app`
+        noAudio
+          ? 'This video has no audio. Choose another format.'
+          : disabled
+            ? 'Open an image or video to export'
+            : `Drag ${mode === 'video' ? videoDragDescription(videoFormat) : formatInfo(format).label} to Finder, the Desktop, or another app`
       }
       draggable={!isTauri && !disabled}
       onPointerDown={onPointerDown}

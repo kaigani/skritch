@@ -36,7 +36,8 @@ export interface ClipInfo {
   rotation: 0 | 90 | 180 | 270;
   frames: Float64Array;
 }
-export type VideoFormat = 'mp4-h264' | 'mp4-hevc' | 'mov' | 'webm';
+/** 'wav' and 'm4a' render only the edit's audio. */
+export type VideoFormat = 'mp4-h264' | 'mp4-hevc' | 'mov' | 'webm' | 'wav' | 'm4a';
 export interface RenderJob {
   outPath: string;
   format: VideoFormat;

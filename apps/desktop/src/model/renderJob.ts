@@ -1,9 +1,10 @@
 // Builds the render job sent to Rust (§6.6) from the EDL. Pure.
+import type { VideoFormat } from '../ipc';
 import { segmentTimes, type VideoProject } from './edl';
 
 export interface RenderOptions {
   outPath: string;
-  format: 'mp4-h264' | 'mp4-hevc' | 'mov' | 'webm';
+  format: VideoFormat;
   quality: 'low' | 'medium' | 'high';
   width: number;
   height: number;

@@ -102,6 +102,26 @@ describe('video drag exports', () => {
     expect(backend.videoRender.mock.calls[1][0]).toMatchObject({ format: 'mov', audio: false });
   });
 
+  it.each(['wav', 'm4a'] as const)(
+    'renders the edit as %s audio even while preview audio is muted',
+    async (format) => {
+      video().set({ audio: false });
+      expect(await complete(prepareVideoExport(format))).toBe(`/tmp/unique/Final cut.${format}`);
+      expect(backend.videoRender.mock.calls[0][0]).toMatchObject({
+        format,
+        audio: true,
+        segments: [{ input: 0, start: 0.1, end: 0.5 }],
+      });
+      expect(backend.videoFramePng).not.toHaveBeenCalled();
+    },
+  );
+
+  it('refuses an audio export when no clip has audio', async () => {
+    video().exec('Mute source', (p) => ({ clips: { a: { ...p.clips.a, hasAudio: false } } }));
+    await expect(prepareVideoExport('wav')).rejects.toThrow('no audio');
+    expect(backend.videoRender).not.toHaveBeenCalled();
+  });
+
   it.each(['png', 'jpg', 'tiff', 'pdf', 'bmp', 'gif'] as const)(
     'exports only the playhead frame as %s',
     async (format) => {

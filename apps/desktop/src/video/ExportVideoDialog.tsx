@@ -6,13 +6,15 @@ import { formatTimecode } from '../model/timecode';
 import { errorText, ui, useUi } from '../state/ui';
 import { usePrefs } from '../state/prefs';
 import { useVideo } from '../state/video';
-import { videoFileStem } from '../export/formats';
+import { isAudioFormat, videoFileStem } from '../export/formats';
 
 const FORMATS: { id: VideoFormat; label: string; ext: string }[] = [
   { id: 'mp4-h264', label: 'MP4 (H.264)', ext: 'mp4' },
   { id: 'mp4-hevc', label: 'MP4 (HEVC)', ext: 'mp4' },
   { id: 'mov', label: 'MOV (H.264)', ext: 'mov' },
   { id: 'webm', label: 'WebM (VP9)', ext: 'webm' },
+  { id: 'wav', label: 'WAV (audio only)', ext: 'wav' },
+  { id: 'm4a', label: 'M4A (AAC, audio only)', ext: 'm4a' },
 ];
 
 /** Export dialog (§6.6). For video, Save = render. */
@@ -32,11 +34,18 @@ export function ExportVideoDialog() {
   useEffect(() => {
     if (open) void ipc.videoEncoders().then(setEncoders, () => setEncoders(null));
   }, [open]);
-  const available = (f: VideoFormat) =>
-    !encoders || (f === 'mp4-hevc' ? !!encoders.hevc : f === 'webm' ? !!encoders.vp9 : !!encoders.h264);
 
   if (!open || !project) return null;
   const hasAudio = Object.values(project.clips).some((c) => c.hasAudio);
+  const audioOnly = isAudioFormat(format);
+  const unavailable = (f: VideoFormat) =>
+    isAudioFormat(f)
+      ? hasAudio
+        ? null
+        : 'no audio in this video'
+      : !encoders || (f === 'mp4-hevc' ? encoders.hevc : f === 'webm' ? encoders.vp9 : encoders.h264)
+        ? null
+        : 'encoder not available';
   const dims = scaledDims(project.output.width, project.output.height, res === 'source' ? null : +res);
   const close = () => {
     offs.current.forEach((f) => f());
@@ -58,7 +67,7 @@ export function ExportVideoDialog() {
       quality,
       ...dims,
       fps: project.output.fps,
-      audio: audio && hasAudio,
+      audio: audioOnly || (audio && hasAudio),
     });
     setJob({ id: null, progress: null });
     let jobId: string | null = null;
@@ -113,38 +122,60 @@ export function ExportVideoDialog() {
                 onChange={(e) => setFormat(e.target.value as VideoFormat)}
               >
                 {FORMATS.map((f) => (
-                  <option key={f.id} value={f.id} disabled={!available(f.id)}>
+                  <option key={f.id} value={f.id} disabled={!!unavailable(f.id)}>
                     {f.label}
-                    {available(f.id) ? '' : ' — encoder not available'}
+                    {unavailable(f.id) ? ` — ${unavailable(f.id)}` : ''}
                   </option>
                 ))}
               </select>
-              <label htmlFor="ex-quality">Quality</label>
-              <select id="ex-quality" value={quality} onChange={(e) => setQuality(e.target.value as never)}>
-                <option value="high">High</option>
-                <option value="medium">Medium</option>
-                <option value="low">Low</option>
-              </select>
-              <label htmlFor="ex-res">Resolution</label>
-              <select id="ex-res" value={res} onChange={(e) => setRes(e.target.value as never)}>
-                <option value="source">
-                  Source ({project.output.width}×{project.output.height})
-                </option>
-                <option value="1080">1080p</option>
-                <option value="720">720p</option>
-              </select>
-              <label>Frame rate</label>
-              <span>Source ({Math.round(project.output.fps * 100) / 100} fps)</span>
-              <label>Audio</label>
-              <label style={{ textAlign: 'left' }}>
-                <input
-                  type="checkbox"
-                  checked={audio && hasAudio}
-                  disabled={!hasAudio}
-                  onChange={(e) => setAudio(e.target.checked)}
-                />{' '}
-                Include audio
-              </label>
+              {format !== 'wav' && (
+                <>
+                  <label htmlFor="ex-quality">Quality</label>
+                  <select
+                    id="ex-quality"
+                    value={quality}
+                    onChange={(e) => setQuality(e.target.value as never)}
+                  >
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                  </select>
+                </>
+              )}
+              {audioOnly ? (
+                <>
+                  <label>Audio</label>
+                  <span>
+                    {format === 'wav'
+                      ? 'Uncompressed 16-bit'
+                      : `AAC ${{ low: 96, medium: 160, high: 256 }[quality]} kbit/s`}
+                    , 48 kHz stereo
+                  </span>
+                </>
+              ) : (
+                <>
+                  <label htmlFor="ex-res">Resolution</label>
+                  <select id="ex-res" value={res} onChange={(e) => setRes(e.target.value as never)}>
+                    <option value="source">
+                      Source ({project.output.width}×{project.output.height})
+                    </option>
+                    <option value="1080">1080p</option>
+                    <option value="720">720p</option>
+                  </select>
+                  <label>Frame rate</label>
+                  <span>Source ({Math.round(project.output.fps * 100) / 100} fps)</span>
+                  <label>Audio</label>
+                  <label style={{ textAlign: 'left' }}>
+                    <input
+                      type="checkbox"
+                      checked={audio && hasAudio}
+                      disabled={!hasAudio}
+                      onChange={(e) => setAudio(e.target.checked)}
+                    />{' '}
+                    Include audio
+                  </label>
+                </>
+              )}
             </div>
             <div className="buttons">
               <button className="pill" onClick={close}>
@@ -162,7 +193,7 @@ export function ExportVideoDialog() {
             </div>
             <p style={{ marginTop: 8, color: '#666' }}>
               {p
-                ? `${Math.round(p.progress * 100)}% · ${Math.round(p.fps)} fps ${p.etaSec !== null ? ` · ${Math.ceil(p.etaSec)} s left` : ''}`
+                ? `${Math.round(p.progress * 100)}%${audioOnly ? '' : ` · ${Math.round(p.fps)} fps`}${p.etaSec !== null ? ` · ${Math.ceil(p.etaSec)} s left` : ''}`
                 : 'Starting…'}
             </p>
             <div className="buttons">

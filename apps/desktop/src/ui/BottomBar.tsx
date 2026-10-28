@@ -6,6 +6,7 @@ import {
   IMAGE_FORMATS,
   VIDEO_DRAG_FORMATS,
   formatInfo,
+  isAudioFormat,
   safeFileStem,
   videoDragFormatInfo,
   videoFileStem,
@@ -34,6 +35,7 @@ export function BottomBar() {
   const doc = useDoc((s) => s.doc);
   const dirty = useDoc(isDirty);
   const hasVideo = useVideo((s) => !!s.project?.sequence.length);
+  const hasAudio = useVideo((s) => !!s.project && Object.values(s.project.clips).some((c) => c.hasAudio));
   const fmtRef = useRef<HTMLButtonElement>(null);
 
   return (
@@ -103,7 +105,8 @@ export function BottomBar() {
             {(mode === 'video' ? VIDEO_DRAG_FORMATS : IMAGE_FORMATS).map((f) => (
               <MenuItem
                 key={f.id}
-                label={`${selectedFormat === f.id ? '✓ ' : '   '}${f.label}`}
+                label={`${selectedFormat === f.id ? '✓ ' : '   '}${f.label}${isAudioFormat(f.id) ? (hasAudio ? ' (audio only)' : ' (no audio)') : ''}`}
+                disabled={isAudioFormat(f.id) && !hasAudio && selectedFormat !== f.id}
                 onClick={() =>
                   mode === 'video'
                     ? set({ videoDragFormat: f.id, popover: null })
@@ -145,7 +148,7 @@ function Filename({ id, title, videoMode = false }: { id: string; title: string;
       const stem = safeFileStem(
         draft.replace(
           videoMode
-            ? /\.(mp4|mov|skritchv|png|jpe?g|tiff?|pdf|bmp|gif)$/i
+            ? /\.(mp4|mov|wav|m4a|skritchv|png|jpe?g|tiff?|pdf|bmp|gif)$/i
             : /\.(png|jpe?g|tiff?|pdf|bmp|gif)$/i,
           '',
         ),

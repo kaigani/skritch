@@ -65,6 +65,12 @@ pub enum RenderFormat {
     Mov,
     #[serde(rename = "webm")]
     Webm,
+    /// Audio only: 16-bit PCM.
+    #[serde(rename = "wav")]
+    Wav,
+    /// Audio only: AAC.
+    #[serde(rename = "m4a")]
+    M4a,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
@@ -76,11 +82,18 @@ pub enum Quality {
 }
 
 impl RenderFormat {
+    pub fn audio_only(self) -> bool {
+        matches!(self, RenderFormat::Wav | RenderFormat::M4a)
+    }
+
     fn video_encoder(self, encoders: &Encoders) -> AppResult<&str> {
         let (encoder, codec) = match self {
             RenderFormat::Mp4H264 | RenderFormat::Mov => (&encoders.h264, "H.264"),
             RenderFormat::Mp4Hevc => (&encoders.hevc, "HEVC"),
             RenderFormat::Webm => (&encoders.vp9, "VP9"),
+            RenderFormat::Wav | RenderFormat::M4a => {
+                return Err(AppError::invalid("audio formats have no video encoder"))
+            }
         };
         encoder.as_deref().ok_or_else(|| AppError::unsupported(format!("no working {codec} encoder in this ffmpeg")))
     }
@@ -91,6 +104,7 @@ impl RenderFormat {
             RenderFormat::Mp4H264 | RenderFormat::Mov => 1.0,
             RenderFormat::Mp4Hevc => 0.6,
             RenderFormat::Webm => 0.7,
+            RenderFormat::Wav | RenderFormat::M4a => 0.0,
         }
     }
 }
@@ -112,12 +126,16 @@ impl RenderJob {
                 return Err(AppError::invalid(format!("segment {i} has an empty or negative range")));
             }
         }
+        if self.format.audio_only() && !self.inputs.iter().any(|i| i.has_audio) {
+            return Err(AppError::invalid("this video has no audio to export"));
+        }
         Ok(())
     }
 
-    /// Audio is rendered only if requested and at least one input actually has some.
+    /// Audio is rendered only if requested (always, for audio formats) and at least one input
+    /// actually has some.
     fn with_audio(&self) -> bool {
-        self.audio && self.inputs.iter().any(|i| i.has_audio)
+        (self.audio || self.format.audio_only()) && self.inputs.iter().any(|i| i.has_audio)
     }
 
     pub fn duration(&self) -> f64 {
@@ -148,24 +166,27 @@ pub fn fmt_rate(fps: f64) -> String {
 
 /// The `-filter_complex` graph: per segment a trimmed, letterboxed, rate-normalised video chain and
 /// (if audio is on) a trimmed, resampled audio chain — silence from `anullsrc` for inputs without
-/// audio — then one `concat`.
+/// audio — then one `concat`. Audio formats get only the audio chains.
 pub fn build_filtergraph(job: &RenderJob) -> AppResult<String> {
     job.validate()?;
     let (w, h) = job.even_size();
     let fps = fmt_rate(job.fps);
     let audio = job.with_audio();
+    let video = !job.format.audio_only();
     let mut chains = Vec::with_capacity(job.segments.len() * 2 + 1);
     let mut concat_inputs = String::new();
 
     for (k, seg) in job.segments.iter().enumerate() {
         let (start, end) = (secs((seg.start - TRIM_EPSILON).max(0.0)), secs(seg.end - TRIM_EPSILON));
         let i = seg.input;
-        chains.push(format!(
-            "[{i}:V]trim=start={start}:end={end},setpts=PTS-STARTPTS,\
-             scale={w}:{h}:force_original_aspect_ratio=decrease,pad={w}:{h}:-1:-1,setsar=1,\
-             fps={fps},format=yuv420p[v{k}]"
-        ));
-        concat_inputs.push_str(&format!("[v{k}]"));
+        if video {
+            chains.push(format!(
+                "[{i}:V]trim=start={start}:end={end},setpts=PTS-STARTPTS,\
+                 scale={w}:{h}:force_original_aspect_ratio=decrease,pad={w}:{h}:-1:-1,setsar=1,\
+                 fps={fps},format=yuv420p[v{k}]"
+            ));
+            concat_inputs.push_str(&format!("[v{k}]"));
+        }
         if audio {
             chains.push(if job.inputs[i].has_audio {
                 format!(
@@ -179,10 +200,10 @@ pub fn build_filtergraph(job: &RenderJob) -> AppResult<String> {
         }
     }
     let n = job.segments.len();
-    chains.push(if audio {
-        format!("{concat_inputs}concat=n={n}:v=1:a=1[outv][outa]")
-    } else {
-        format!("{concat_inputs}concat=n={n}:v=1:a=0[outv]")
+    chains.push(match (video, audio) {
+        (true, true) => format!("{concat_inputs}concat=n={n}:v=1:a=1[outv][outa]"),
+        (true, false) => format!("{concat_inputs}concat=n={n}:v=1:a=0[outv]"),
+        (false, _) => format!("{concat_inputs}concat=n={n}:v=0:a=1[outa]"),
     });
     Ok(chains.join(";"))
 }
@@ -226,9 +247,17 @@ pub fn encoder_options(encoder: &str) -> &'static [&'static str] {
     }
 }
 
+/// Audio-only renders: AAC bitrate by quality.
+fn audio_kbps(quality: Quality) -> u32 {
+    match quality {
+        Quality::Low => 96,
+        Quality::Medium => 160,
+        Quality::High => 256,
+    }
+}
+
 pub fn build_render_args(job: &RenderJob, encoders: &Encoders, graph: &GraphArg) -> AppResult<Vec<String>> {
     job.validate()?;
-    let encoder = job.format.video_encoder(encoders)?;
     let mut args: Vec<String> =
         ["-hide_banner", "-nostdin", "-y", "-v", "error", "-progress", "pipe:1", "-nostats"].map(String::from).to_vec();
     for input in &job.inputs {
@@ -240,6 +269,23 @@ pub fn build_render_args(job: &RenderJob, encoders: &Encoders, graph: &GraphArg)
             args.extend(["-filter_complex_script".to_string(), path.to_string_lossy().into_owned()])
         }
     }
+    if job.format.audio_only() {
+        args.extend(["-map", "[outa]", "-vn"].map(String::from));
+        if job.format == RenderFormat::Wav {
+            args.extend(["-c:a", "pcm_s16le"].map(String::from));
+        } else {
+            args.extend([
+                "-c:a".to_string(),
+                "aac".to_string(),
+                "-b:a".to_string(),
+                format!("{}k", audio_kbps(job.quality)),
+            ]);
+            args.extend(["-movflags", "+faststart"].map(String::from));
+        }
+        args.push(job.out_path.clone());
+        return Ok(args);
+    }
+    let encoder = job.format.video_encoder(encoders)?;
     args.extend(["-map".to_string(), "[outv]".to_string()]);
     let audio = job.with_audio();
     if audio {
@@ -503,6 +549,33 @@ mod tests {
         assert!(args.contains("-filter_complex_script g.txt"));
         assert!(args.contains("-c:v libvpx-vp9") && args.contains("-c:a libopus -b:a 128k"));
         assert!(!args.contains("faststart"));
+    }
+
+    #[test]
+    fn audio_formats_render_only_audio() {
+        let mut job = two_input_job();
+        job.format = RenderFormat::Wav;
+        job.audio = false; // the preview mute never silences an audio export
+        let graph = build_filtergraph(&job).unwrap();
+        assert!(!graph.contains(":V]") && !graph.contains("[v"));
+        assert!(graph.ends_with("[a0][a1][a2]concat=n=3:v=0:a=1[outa]"));
+        // No video encoder is needed.
+        let none = Encoders { h264: None, hevc: None, vp9: None };
+        let args = build_render_args(&job, &none, &GraphArg::Inline("G".into())).unwrap().join(" ");
+        assert!(args.ends_with("-filter_complex G -map [outa] -vn -c:a pcm_s16le C:/out/final.mp4"));
+        job.format = RenderFormat::M4a;
+        job.quality = Quality::Medium;
+        let args = build_render_args(&job, &none, &GraphArg::Inline("G".into())).unwrap().join(" ");
+        assert!(args.contains("-map [outa] -vn -c:a aac -b:a 160k -movflags +faststart"));
+        assert!(!args.contains("-c:v") && !args.contains("[outv]"));
+    }
+
+    #[test]
+    fn audio_formats_need_an_input_with_audio() {
+        let mut job = two_input_job();
+        job.format = RenderFormat::M4a;
+        job.inputs[0].has_audio = false;
+        assert!(build_filtergraph(&job).is_err());
     }
 
     #[test]

@@ -135,6 +135,28 @@ fn probe_frame_png_and_render_end_to_end() {
     assert!(rendered.has_audio);
     assert_eq!((rendered.width, rendered.height), (320, 240));
 
+    // The same edit as audio only: silence for the silent clip, then the tone; no video stream.
+    for (format, ext, codec) in [(RenderFormat::Wav, "wav", "pcm_s16le"), (RenderFormat::M4a, "m4a", "aac")] {
+        let out = dir.0.join(format!("out.{ext}"));
+        let job = RenderJob { out_path: out.to_string_lossy().into_owned(), format, audio: false, ..job.clone() };
+        let (args, _) = render::prepare_args(&job, encoders(), &dir.0.join("graph.txt")).unwrap();
+        progress::run_ffmpeg(&args, |_| {}, |_| {}).unwrap();
+        let mut probe_args = strings(&[
+            "-v",
+            "error",
+            "-show_entries",
+            "stream=codec_type,codec_name:format=duration",
+            "-of",
+            "csv=p=0",
+        ]);
+        probe_args.push(out.to_string_lossy().into_owned());
+        let info = String::from_utf8(run_capture("ffprobe", &probe_args).unwrap()).unwrap();
+        let lines: Vec<&str> = info.lines().map(str::trim).filter(|l| !l.is_empty()).collect();
+        assert_eq!(lines[0], format!("{codec},audio"), "{ext}: {info}");
+        let duration: f64 = lines[1].parse().unwrap();
+        assert!((duration - 2.0).abs() < 0.05, "{ext} duration {duration}");
+    }
+
     // Proxy: same frame count, reported progress reaches 1, second call is a cache hit.
     let h264 = encoders().h264.clone().expect("an H.264 encoder");
     let proxies = dir.0.join("proxies");
