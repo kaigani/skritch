@@ -1,4 +1,4 @@
-Skritch v0.2.1 — bundled software notices
+Skritch v0.2.2 — bundled software notices
 
 Skritch source code: https://github.com/kaigani/skritch
 Skritch is Copyright (c) 2026 Kaigani Turner, distributed under the MIT license.
@@ -9,7 +9,7 @@ separate executable sidecars, without GPL components or network support.
 
 Corresponding unmodified source archives, their license texts, and the build
 script are distributed with this release:
-https://github.com/kaigani/skritch/releases/download/v0.2.1/Skritch_0.2.1_third-party-sources.tar.gz
+https://github.com/kaigani/skritch/releases/download/v0.2.2/Skritch_0.2.2_third-party-sources.tar.gz
 
 The sidecar executables can be replaced or rebuilt from source. Replacing signed
 bundle contents invalidates the app signature; development builds can use tools
