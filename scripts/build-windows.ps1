@@ -79,7 +79,8 @@ Skritch_${version}_windows_third-party-sources.tar.gz beside this download.
     Compress-Archive -LiteralPath $portableDir -DestinationPath $archive -Force
     $artifacts = @($archive)
     foreach ($format in @('msi', 'nsis')) {
-        $pattern = if ($format -eq 'msi') { '*.msi' } else { '*-setup.exe' }
+        # Bundle folders keep installers from earlier versions; take only this version's.
+        $pattern = if ($format -eq 'msi') { "*_${version}_*.msi" } else { "*_${version}_*-setup.exe" }
         $bundles = @(Get-ChildItem -LiteralPath (Join-Path $releaseDir "bundle/$format") -Filter $pattern)
         if ($bundles.Count -ne 1) { throw "Expected one $format installer, found $($bundles.Count)" }
         $destination = Join-Path $outputDir $bundles[0].Name
@@ -101,6 +102,6 @@ Skritch_${version}_windows_third-party-sources.tar.gz beside this download.
         $hash = (Get-FileHash -LiteralPath $artifact -Algorithm SHA256).Hash.ToLowerInvariant()
         "$hash  $(Split-Path -Leaf $artifact)"
     }
-    $checksums | Set-Content -LiteralPath (Join-Path $outputDir 'SHA256SUMS.txt') -Encoding ASCII
+    $checksums | Set-Content -LiteralPath (Join-Path $outputDir 'SHA256SUMS-WINDOWS.txt') -Encoding ASCII
     Write-Host "Windows artifacts: $outputDir"
 } finally { Pop-Location }

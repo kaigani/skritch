@@ -2,7 +2,14 @@
 
 ## 0.2.2 — 2026-10-28
 
-Mac release (universal DMG). Windows downloads remain 0.1.0.
+Mac release (universal DMG) and Windows x64 release (setup EXE, MSI and portable ZIP, unsigned).
+
+These are the first Windows builds since 0.1.0, so they also bring the 0.2.0 and 0.2.1 changes below to
+Windows. Mac-only items: notarization, the Mac video-tool rebuild with VideoToolbox, and the Mac
+exception-handling crash fix. Windows 0.1.0 already had the advanced capture controls and the Lavfi
+encoder-probe fix. Windows validation: 68 unit tests, 28 Chromium workflow tests and 47 native tests
+passed with the bundled video tools. MSI extraction, native launch and Media Foundation H.264
+encoding were also checked.
 
 - Taking a capture while a video is open no longer blanks the window. The video project is now closed
   only after the image has opened, and stays open if the image fails to load.

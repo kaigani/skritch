@@ -17,11 +17,11 @@ source archives when its second argument is supplied. The Lavfi input device is 
 app's synthetic encoder probes; capture still uses the native screenshot backend.
 
 `pnpm build:windows` packages the corresponding sources, build script and notices as
-`Skritch_0.1.0_windows_third-party-sources.tar.gz` alongside the EXE, MSI and portable ZIP.
+`Skritch_<version>_windows_third-party-sources.tar.gz` alongside the EXE, MSI and portable ZIP.
 Distribute the source archive and checksums with these Windows downloads. The Mac source archive
 linked below does not include zlib or the Windows build script.
 
-[Download the Windows corresponding source archive](https://github.com/kaigani/skritch/releases/download/v0.1.0/Skritch_0.1.0_windows_third-party-sources.tar.gz).
+[Download the Windows corresponding source archive](https://github.com/kaigani/skritch/releases/download/v0.2.2/Skritch_0.2.2_windows_third-party-sources.tar.gz).
 
 ## Video tools in the Mac download
 

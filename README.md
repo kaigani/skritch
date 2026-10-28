@@ -20,14 +20,14 @@ projects and native drag-to-save exports. Built with Tauri 2, React, TypeScript 
 
 [Release notes](CHANGELOG.md) · [SHA-256 checksums](https://github.com/kaigani/skritch/releases/download/v0.2.2/SHA256SUMS.txt) · [Third-party sources](https://github.com/kaigani/skritch/releases/download/v0.2.2/Skritch_0.2.2_third-party-sources.tar.gz)
 
-**[Download Skritch 0.1.0 for Windows x64](https://github.com/kaigani/skritch/releases/download/v0.1.0/Skritch_0.1.0_x64-setup.exe)**
+**[Download Skritch 0.2.2 for Windows x64](https://github.com/kaigani/skritch/releases/download/v0.2.2/Skritch_0.2.2_x64-setup.exe)**
 
 - About 21 MB for the setup EXE. Installs for the current user and can install WebView2 if needed.
 - FFmpeg and FFprobe are included. This build is **unsigned**; Windows may show an unknown-publisher warning.
-- Also available as an [MSI installer](https://github.com/kaigani/skritch/releases/download/v0.1.0/Skritch_0.1.0_x64_en-US.msi)
-  or [portable ZIP](https://github.com/kaigani/skritch/releases/download/v0.1.0/Skritch_0.1.0_x64_portable.zip).
+- Also available as an [MSI installer](https://github.com/kaigani/skritch/releases/download/v0.2.2/Skritch_0.2.2_x64_en-US.msi)
+  or [portable ZIP](https://github.com/kaigani/skritch/releases/download/v0.2.2/Skritch_0.2.2_x64_portable.zip).
 
-[Windows checksums](https://github.com/kaigani/skritch/releases/download/v0.1.0/SHA256SUMS-WINDOWS.txt) · [Windows third-party sources](https://github.com/kaigani/skritch/releases/download/v0.1.0/Skritch_0.1.0_windows_third-party-sources.tar.gz)
+[Windows checksums](https://github.com/kaigani/skritch/releases/download/v0.2.2/SHA256SUMS-WINDOWS.txt) · [Windows third-party sources](https://github.com/kaigani/skritch/releases/download/v0.2.2/Skritch_0.2.2_windows_third-party-sources.tar.gz)
 
 ## What it does
 
@@ -115,7 +115,7 @@ The MSI is also available for Windows Installer deployments. All Windows downloa
 Verify a download against `SHA256SUMS-WINDOWS.txt`, for example in PowerShell:
 
 ```powershell
-Get-FileHash .\Skritch_0.1.0_x64-setup.exe -Algorithm SHA256
+Get-FileHash .\Skritch_0.2.2_x64-setup.exe -Algorithm SHA256
 ```
 
 Windows includes native menus and capture shortcuts, clipboard support, Explorer drag export, and a
@@ -301,7 +301,7 @@ pnpm build:windows
 
 The command runs lint, TypeScript, unit, Chromium workflow and native video tests, collects Windows
 dependency notices, and creates **NSIS setup EXE**, **MSI**, **portable ZIP**, **corresponding video-tool
-sources**, and **SHA256SUMS.txt** under `dist/windows/`. For a rebuild after checking the same sources,
+sources**, and **SHA256SUMS-WINDOWS.txt** under `dist/windows/`. For a rebuild after checking the same sources,
 `pnpm build:windows -- -SkipTests` skips the tests. Sidecars are validated before packaging; missing
 sources prevent the distribution step from completing.
 

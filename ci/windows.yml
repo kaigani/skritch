@@ -39,5 +39,5 @@ jobs:
             dist/windows/*.msi
             dist/windows/*.zip
             dist/windows/*_third-party-sources.tar.gz
-            dist/windows/SHA256SUMS.txt
+            dist/windows/SHA256SUMS-WINDOWS.txt
           if-no-files-found: error
